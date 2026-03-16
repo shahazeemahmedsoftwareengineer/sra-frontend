@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 
 export default function Register() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -18,7 +19,7 @@ export default function Register() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [email, password, confirm, terms]);
+  }, [name, email, password, confirm, terms]);
 
   function checkStrength(pw) {
     let score = 0;
@@ -45,7 +46,7 @@ export default function Register() {
   async function doRegister() {
     setError('');
     setSuccess(false);
-    if (!email || !password) {
+    if (!name || !email || !password) {
       setError('Please fill in all fields.');
       return;
     }
@@ -70,7 +71,7 @@ export default function Register() {
       const res = await fetch('https://sra-backend-production.up.railway.app/api/v1/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ name, email, password })
       });
       const data = await res.json();
       if (res.ok) {
@@ -151,6 +152,19 @@ export default function Register() {
 
           {error && <div className="error-msg">{error}</div>}
           {success && <div className="success-msg">Account created! Redirecting to your dashboard...</div>}
+
+          <div className="form-group">
+            <label htmlFor="name">Full Name</label>
+            <input
+              className="auth-input"
+              type="text"
+              id="name"
+              placeholder="Full name"
+              autoComplete="name"
+              value={name}
+              onChange={e => setName(e.target.value)}
+            />
+          </div>
 
           <div className="form-group">
             <label htmlFor="email">Email address</label>
