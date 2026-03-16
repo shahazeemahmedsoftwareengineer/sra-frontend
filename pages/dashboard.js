@@ -114,10 +114,10 @@ export default function Dashboard() {
     navActiveTxt:'#6c9bff',
     navTxt:      '#8896b3',
     // Main area — clean light
-    pageBg:      '#f4f6fb',
-    cardBg:      '#ffffff',
-    cardBorder:  '#e8edf5',
-    cardShadow:  '0 1px 4px rgba(0,0,0,.06)',
+    pageBg:'#fff4e6',
+    cardBg:'#fff8ec',
+    cardBorder:'#ffe0b2',
+    cardShadow:'0 1px 6px rgba(255,159,67,.1)',
     // Typography
     titleTxt:    '#1a2035',
     bodyTxt:     '#4a5568',
@@ -128,14 +128,14 @@ export default function Dashboard() {
     purpleBorder:'#d6ceff',
     // Stat card colors (eMart pastel style)
     stat0bg:     '#fff8ec', stat0ic:     '#ff9f43', stat0bdr:   '#ffe0b2',
-    stat1bg:     '#eef9f0', stat1ic:     '#28c76f', stat1bdr:   '#b8f0c8',
-    stat2bg:     '#eef4ff', stat2ic:     '#4a90e2', stat2bdr:   '#c2d8f8',
+    stat1bg:'#fff8ec', stat1ic:'#ff9f43', stat1bdr:'#ffe0b2',
+    stat2bg:'#fff8ec', stat2ic:'#ff9f43', stat2bdr:'#ffe0b2',
     // Status
     green:       '#28c76f', greenBg: '#eef9f0', greenBdr:'#b8f0c8',
     red:         '#ea5455', redBg:   '#fff0f0', redBdr:  '#ffc0c0',
     // Topbar
-    topBg:       '#ffffff',
-    topBorder:   '#e8edf5',
+    topBg:'#fff8ec',
+    topBorder:'#ffe0b2',
   };
 
   return (
@@ -337,13 +337,13 @@ export default function Dashboard() {
                       }}><span>⚿</span>{genLoading?'Generating…':'Generate Key'}</button>
                       <button className="qa-btn" onClick={()=>setActiveNav('encrypt')} style={{
                         display:'flex',alignItems:'center',gap:10,padding:'11px 13px',
-                        background:'#f8f9fb',border:`1px solid ${C.cardBorder}`,
+                        background:'#fff3e0',border:`1px solid ${C.cardBorder}`,
                         borderRadius:10,color:C.bodyTxt,fontSize:13,fontWeight:500,
                         transition:'all .15s',textAlign:'left'
                       }}><span>🔒</span>Encrypt Data</button>
                       <button className="qa-btn" onClick={()=>setActiveNav('encrypt')} style={{
                         display:'flex',alignItems:'center',gap:10,padding:'11px 13px',
-                        background:'#f8f9fb',border:`1px solid ${C.cardBorder}`,
+                        background:'#fff3e0',border:`1px solid ${C.cardBorder}`,
                         borderRadius:10,color:C.bodyTxt,fontSize:13,fontWeight:500,
                         transition:'all .15s',textAlign:'left'
                       }}><span>🔓</span>Decrypt Data</button>
@@ -393,7 +393,7 @@ export default function Dashboard() {
                   }}>{genLoading?'⏳ Generating…':'+ Generate Key'}</button>
                 </div>
                 {keys.map((k,i)=>(
-                  <div key={k.id} style={{background:'#f8f9fb',border:`1px solid ${C.cardBorder}`,borderRadius:12,padding:'16px 18px',marginBottom:i<keys.length-1?10:0}}>
+                  <div key={k.id} style={{background:'#fff3e0',border:`1px solid ${C.cardBorder}`,borderRadius:12,padding:'16px 18px',marginBottom:i<keys.length-1?10:0}}>
                     <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12}}>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:k.value?10:0,flexWrap:'wrap'}}>
@@ -403,7 +403,7 @@ export default function Dashboard() {
                           <span style={{fontSize:11.5,color:C.mutedTxt}}>{k.created}</span>
                         </div>
                         {k.value&&(
-                          <div style={{background:'#fff',border:`1px solid ${C.purpleBorder}`,borderRadius:8,padding:'10px 12px',fontFamily:'DM Mono,monospace',fontSize:11,color:C.purple,wordBreak:'break-all',lineHeight:1.7}}>{k.value}</div>
+                          <div style={{background:'#fff8ec',border:`1px solid ${C.purpleBorder}`,borderRadius:8,padding:'10px 12px',fontFamily:'DM Mono,monospace',fontSize:11,color:C.purple,wordBreak:'break-all',lineHeight:1.7}}>{k.value}</div>
                         )}
                         {k.code&&<div style={{fontSize:12,color:C.bodyTxt,marginTop:8}}>Verification: <span style={{color:C.purple,fontWeight:600}}>{k.code}</span></div>}
                       </div>
@@ -427,7 +427,7 @@ export default function Dashboard() {
                   </div>
                   <textarea rows={6} value={encInput} onChange={e=>setEncInput(e.target.value)}
                     placeholder="Enter plaintext to encrypt…"
-                    style={{width:'100%',background:'#f8f9fb',border:`1px solid ${C.cardBorder}`,borderRadius:10,padding:'12px 14px',fontSize:12.5,color:C.titleTxt,resize:'vertical',lineHeight:1.7,transition:'all .2s'}}
+                    style={{width:'100%',background:'#fff3e0',border:`1px solid ${C.cardBorder}`,borderRadius:10,padding:'12px 14px',fontSize:12.5,color:C.titleTxt,resize:'vertical',lineHeight:1.7,transition:'all .2s'}}
                   />
                   <button className="enc-btn" onClick={handleEncrypt} disabled={encLoading} style={{
                     width:'100%',marginTop:12,padding:'12px 0',
@@ -437,7 +437,7 @@ export default function Dashboard() {
                     boxShadow:'0 4px 14px rgba(108,92,231,.3)'
                   }}>{encLoading?'Encrypting…':'Encrypt →'}</button>
                   {encResult&&(
-                    <div style={{marginTop:14,background:'#f8f9fb',border:`1px solid ${C.purpleBorder}`,borderRadius:10,padding:14}}>
+                    <div style={{marginTop:14,background:'#fff3e0',border:`1px solid ${C.purpleBorder}`,borderRadius:10,padding:14}}>
                       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
                         <div style={{fontSize:10,fontWeight:700,color:C.purple,textTransform:'uppercase',letterSpacing:'.07em'}}>Encrypted Output</div>
                         <button className="copy-btn" onClick={()=>copyText(encResult,'enc')} style={{background:C.purpleLight,border:`1px solid ${C.purpleBorder}`,borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:600,color:C.purple,transition:'all .15s'}}>{copied==='enc'?'✓':'Copy'}</button>
@@ -454,10 +454,10 @@ export default function Dashboard() {
                   </div>
                   <textarea rows={6} value={decInput} onChange={e=>setDecInput(e.target.value)}
                     placeholder="Paste encrypted string here…"
-                    style={{width:'100%',background:'#f8f9fb',border:`1px solid ${C.cardBorder}`,borderRadius:10,padding:'12px 14px',fontSize:12.5,color:C.titleTxt,resize:'vertical',lineHeight:1.7,transition:'all .2s'}}
+                    style={{width:'100%',background:'#fff3e0',border:`1px solid ${C.cardBorder}`,borderRadius:10,padding:'12px 14px',fontSize:12.5,color:C.titleTxt,resize:'vertical',lineHeight:1.7,transition:'all .2s'}}
                   />
                   <button className="dec-btn" onClick={handleDecrypt} disabled={decLoading} style={{
-                    width:'100%',marginTop:12,padding:'12px 0',background:'#fff',
+                    width:'100%',marginTop:12,padding:'12px 0',background:'#fff8ec',
                     border:`1.5px solid ${C.cardBorder}`,borderRadius:10,
                     color:C.bodyTxt,fontSize:14,fontWeight:600,
                     transition:'all .15s',opacity:decLoading?.7:1
