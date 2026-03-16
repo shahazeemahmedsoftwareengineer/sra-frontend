@@ -41,7 +41,7 @@ export default function App({ Component, pageProps }) {
 function AuthNav() {
   const router = useRouter();
   const isLogin = router.pathname === '/login';
-
+ 
   return (
     <nav>
       <div className="nav-inner">
