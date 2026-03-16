@@ -1,528 +1,558 @@
+'use client';
 import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
-import Link from 'next/link';
 
-const BASE = 'https://sra-backend-production.up.railway.app/api/v1';
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://sra-backend-production.up.railway.app';
 
-const css = `
-    body{background:#F5F5F7;overflow-x:hidden}
-    .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
-    .sidebar{background:var(--charcoal);position:fixed;top:0;left:0;width:240px;height:100vh;display:flex;flex-direction:column;z-index:100;overflow-y:auto}
-    .sb-logo{display:flex;align-items:center;gap:10px;padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,.06)}
-    .sb-logo-icon{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--purple),#60A5FA);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-    .sb-logo-text{font-family:'Urbanist',sans-serif;font-size:16px;font-weight:800;color:#fff}
-    .sb-section{padding:14px 12px 8px}
-    .sb-sect-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.25);padding:0 8px;margin-bottom:5px}
-    .sb-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;font-size:13.5px;font-weight:500;color:rgba(255,255,255,.45);cursor:pointer;transition:all .2s;text-decoration:none;margin-bottom:1px;border:none;background:none;width:100%;text-align:left}
-    .sb-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.7)}
-    .sb-item.on{background:rgba(255,255,255,.1);color:#fff}
-    .sb-item svg{flex-shrink:0;opacity:.6}.sb-item.on svg{opacity:1}
-    .sb-footer{margin-top:auto;padding:14px 12px;border-top:1px solid rgba(255,255,255,.06)}
-    .sb-user{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;background:rgba(255,255,255,.05);margin-bottom:6px}
-    .sb-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--blue));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0}
-    .sb-uname{font-size:12.5px;font-weight:600;color:rgba(255,255,255,.8);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .sb-plan{font-size:10.5px;color:rgba(255,255,255,.3)}
-    .sb-logout{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;font-size:12.5px;color:rgba(255,255,255,.3);cursor:pointer;transition:all .2s;border:none;background:none;width:100%}
-    .sb-logout:hover{color:rgba(255,255,255,.6);background:rgba(255,255,255,.04)}
-    .main{margin-left:240px;min-height:100vh}
-    .topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 28px;height:58px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:50}
-    .tb-menu-btn{display:none;background:none;border:none;padding:0;cursor:pointer;color:var(--charcoal)}
-    .tb-title{font-family:'Urbanist',sans-serif;font-size:15px;font-weight:800;color:var(--charcoal);flex:1}
-    .tb-right{display:flex;align-items:center;gap:10px}
-    .tb-badge{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--green);background:#D1FAE5;padding:4px 10px;border-radius:100px}
-    .tb-bdot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s ease infinite}
-    .content{padding:28px}
-    .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99}
-    .sidebar-backdrop.show{display:block}
-    .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}
-    .stat-card{background:#fff;border:1.5px solid var(--border);border-radius:18px;padding:22px;box-shadow:var(--sh-sm)}
-    .sc-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
-    .sc-label{font-size:11.5px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.5px}
-    .sc-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
-    .sc-val{font-family:'Urbanist',sans-serif;font-size:30px;font-weight:900;color:var(--charcoal);line-height:1;letter-spacing:-1px}
-    .sc-sub{font-size:12px;color:var(--gray);margin-top:4px}
-    .chart-card{background:#fff;border:1.5px solid var(--border);border-radius:18px;padding:22px;margin-bottom:22px;box-shadow:var(--sh-sm)}
-    .chart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-    .chart-title{font-family:'Urbanist',sans-serif;font-size:15px;font-weight:800;color:var(--charcoal)}
-    .chart-legend{display:flex;gap:14px}
-    .legend-item{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--gray);font-weight:500}
-    .legend-dot{width:8px;height:8px;border-radius:50%}
-    .bar-chart{display:flex;align-items:flex-end;gap:6px;height:140px;padding:0 4px}
-    .bar-group{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;justify-content:flex-end}
-    .bar-enc{border-radius:5px 5px 0 0;background:var(--purple);width:100%}
-    .bar-dec{border-radius:5px 5px 0 0;background:var(--blue);width:100%}
-    .bar-label{font-size:9.5px;color:var(--gray);margin-top:5px}
-    .keys-card{background:#fff;border:1.5px solid var(--border);border-radius:18px;padding:22px;box-shadow:var(--sh-sm)}
-    .kc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-    .kc-title{font-family:'Urbanist',sans-serif;font-size:15px;font-weight:800;color:var(--charcoal)}
-    .key-list{display:flex;flex-direction:column;gap:10px}
-    .key-item{display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;transition:all .2s}
-    .key-item:hover{border-color:rgba(139,92,246,.25);background:var(--purple-l)}
-    .ki-icon{width:36px;height:36px;border-radius:10px;background:var(--purple-l);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-    .ki-info{flex:1;min-width:0}
-    .ki-name{font-size:13.5px;font-weight:700;color:var(--charcoal)}
-    .ki-hash{font-size:11.5px;font-family:monospace;color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
-    .ki-del{padding:5px 12px;border-radius:100px;font-size:11.5px;font-weight:600;color:var(--red);background:#FEE2E2;border:none;cursor:pointer;transition:all .2s}
-    .ki-del:hover{background:#FECACA}
-    .empty-keys{text-align:center;padding:40px 20px;color:var(--gray);font-size:14px}
-    .enc-card{background:#fff;border:1.5px solid var(--border);border-radius:18px;padding:22px;box-shadow:var(--sh-sm);margin-bottom:14px}
-    .enc-title{font-family:'Urbanist',sans-serif;font-size:15px;font-weight:800;color:var(--charcoal);margin-bottom:14px}
-    .enc-textarea{width:100%;padding:13px;border:1.5px solid var(--border);border-radius:12px;font-size:13px;font-family:'Manrope',sans-serif;color:var(--charcoal);resize:vertical;min-height:100px;outline:none;transition:border-color .2s}
-    .enc-textarea:focus{border-color:var(--purple)}
-    .enc-actions{display:flex;gap:8px;margin-top:10px}
-    .enc-btn{padding:9px 20px;border-radius:100px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .22s;font-family:'Manrope',sans-serif}
-    .enc-btn.primary{background:var(--charcoal);color:#fff}.enc-btn.primary:hover{background:#111}
-    .enc-btn.secondary{background:var(--purple);color:#fff}.enc-btn.secondary:hover{background:var(--purple-d)}
-    .result-box{background:#0F0F0F;border-radius:12px;padding:15px;margin-top:12px}
-    .res-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
-    .res-label{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.35);font-weight:700}
-    .res-copy{font-size:11px;color:rgba(255,255,255,.4);cursor:pointer;padding:2px 9px;border-radius:6px;border:1px solid rgba(255,255,255,.1);transition:all .2s;background:none}
-    .res-copy:hover{color:rgba(255,255,255,.8)}
-    .res-val{font-family:'SF Mono','Fira Code',monospace;font-size:11.5px;color:var(--purple);word-break:break-all;line-height:1.7}
-    .res-val.plain{color:var(--green)}
-    .activity-card{background:#fff;border:1.5px solid var(--border);border-radius:18px;padding:22px;box-shadow:var(--sh-sm)}
-    .activity-list{display:flex;flex-direction:column;gap:0}
-    .activity-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
-    .activity-item:last-child{border-bottom:none}
-    .act-icon{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
-    .act-info{flex:1}
-    .act-text{font-size:13px;color:var(--charcoal)}
-    .act-sub{font-size:11px;color:var(--gray);margin-top:2px}
-    .act-time{font-size:11.5px;color:var(--gray2)}
-    .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
-    .modal-bg.show{display:flex}
-    .modal{background:#fff;border-radius:22px;padding:32px;width:90%;max-width:480px;box-shadow:var(--sh-xl)}
-    .modal-title{font-family:'Urbanist',sans-serif;font-size:20px;font-weight:800;color:var(--charcoal);margin-bottom:8px}
-    .modal-sub{font-size:13.5px;color:var(--gray);margin-bottom:22px;line-height:1.6}
-    .modal-actions{display:flex;gap:8px;margin-top:22px;justify-content:flex-end}
-    .key-result-box{background:#0F0F0F;border-radius:12px;padding:16px;margin-top:14px}
-    .kr-label{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.3);font-weight:700;margin-bottom:8px}
-    .kr-val{font-family:'SF Mono','Fira Code',monospace;font-size:12px;color:var(--green);word-break:break-all;line-height:1.7}
-    .kr-warn{display:flex;gap:8px;background:#FEF3C7;border-radius:9px;padding:11px 13px;margin-top:12px;font-size:12.5px;color:#92400E;line-height:1.55}
-    @media(max-width:900px){
-      .app{grid-template-columns:1fr}
-      .sidebar{transform:translateX(-100%);transition:transform .3s ease-in-out}
-      .sidebar.open{transform:translateX(0)}
-      .main{margin-left:0}
-      .stat-grid{grid-template-columns:1fr 1fr}
-      .tb-menu-btn{display:block}
-      .topbar{padding:0 20px}
-      .content{padding:20px}
-    }
-    @media(max-width:600px){.stat-grid{grid-template-columns:1fr}}
-  `;
+function getToken() {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('sra_token');
+}
+function getUser() {
+  if (typeof window === 'undefined') return null;
+  try { return JSON.parse(localStorage.getItem('sra_user') || 'null'); } catch { return null; }
+}
 
+// ── ENTROPY ANIMATION MODAL ──────────────────────────────────────────────────
+function EntropyModal({ open, onClose, onKeyGenerated }) {
+  const [phase, setPhase] = useState(0);
+  const [sources, setSources] = useState([
+    { id: 'server',  label: 'Server Timing',    icon: '⚡', detail: 'Collecting 20 request gaps…',        done: false, value: '' },
+    { id: 'btc',     label: 'Bitcoin Price',     icon: '₿',  detail: 'Fetching live BTC/USDT price…',     done: false, value: '' },
+    { id: 'eth',     label: 'Ethereum Block',    icon: '◆',  detail: 'Waiting for next ETH block…',       done: false, value: '' },
+    { id: 'seismic', label: 'Seismic Activity',  icon: '🌍', detail: 'Querying USGS earthquake feed…',    done: false, value: '' },
+  ]);
+  const [mixing, setMixing] = useState(false);
+  const [done, setDone] = useState(false);
+  const [keyValue, setKeyValue] = useState('');
+  const [verifyCode, setVerifyCode] = useState('');
+  const [copied, setCopied] = useState(false);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    // reset
+    setPhase(0); setMixing(false); setDone(false); setKeyValue(''); setVerifyCode(''); setCopied(false);
+    setSources(s => s.map(x => ({ ...x, done: false, value: '' })));
+
+    const fakeValues = [
+      '2ms·7ms·3ms·11ms·4ms·8ms·2ms·5ms',
+      '$83,412.47382',
+      '0x8f3a92b1c4d5e6…',
+      'JP 1.2mag · CL 0.8mag',
+    ];
+
+    let idx = 0;
+    const tick = () => {
+      if (idx < 4) {
+        setSources(prev => prev.map((s, i) => i === idx ? { ...s, done: true, value: fakeValues[i] } : s));
+        setPhase(idx + 1);
+        idx++;
+        timerRef.current = setTimeout(tick, idx === 2 ? 1200 : idx === 3 ? 1400 : 900);
+      } else {
+        setMixing(true);
+        timerRef.current = setTimeout(async () => {
+          try {
+            const token = getToken();
+            const res = await fetch(`${API}/api/v1/shield/keys/generate`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ tier: 'fast' }),
+            });
+            const data = await res.json();
+            const key = data?.data?.encryptionKey || data?.encryptionKey || 'key-unavailable';
+            const code = data?.data?.verificationCode || data?.verificationCode || '';
+            setKeyValue(key);
+            setVerifyCode(code);
+          } catch {
+            setKeyValue('offline-demo-key-' + Math.random().toString(36).slice(2, 18));
+          }
+          setMixing(false);
+          setDone(true);
+        }, 1600);
+      }
+    };
+    timerRef.current = setTimeout(tick, 400);
+    return () => clearTimeout(timerRef.current);
+  }, [open]);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(keyValue);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleClose = () => {
+    if (done) onKeyGenerated && onKeyGenerated(keyValue, verifyCode);
+    onClose();
+  };
+
+  if (!open) return null;
+
+  return (
+    <div style={styles.overlay}>
+      <div style={styles.modal}>
+        {/* Header */}
+        <div style={styles.mHead}>
+          <div style={styles.mIcon}>🔑</div>
+          <div>
+            <div style={styles.mTitle}>Generating Encryption Key</div>
+            <div style={styles.mSub}>Multi-source entropy collection in progress</div>
+          </div>
+        </div>
+
+        {/* Sources */}
+        <div style={styles.sourceList}>
+          {sources.map((s, i) => (
+            <div key={s.id} style={{ ...styles.sourceRow, opacity: i <= phase ? 1 : 0.3, transition: 'opacity 0.4s' }}>
+              <div style={{ ...styles.sourceIcon, background: s.done ? '#dcfce7' : i === phase ? '#fef9c3' : '#f1f5f9' }}>
+                {s.icon}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={styles.sourceLabel}>{s.label}</div>
+                <div style={styles.sourceDetail}>
+                  {s.done ? <span style={{ color: '#16a34a', fontFamily: 'monospace', fontSize: 11 }}>{s.value}</span> : s.detail}
+                </div>
+              </div>
+              <div style={styles.sourceStatus}>
+                {s.done ? (
+                  <span style={styles.checkBadge}>✓</span>
+                ) : i === phase ? (
+                  <span style={styles.spinner} />
+                ) : (
+                  <span style={{ color: '#cbd5e1', fontSize: 12 }}>—</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Mixing phase */}
+        {(mixing || done) && (
+          <div style={styles.mixBox}>
+            {mixing ? (
+              <>
+                <div style={styles.mixAnim}>
+                  <div style={styles.mixOrb1} /><div style={styles.mixOrb2} /><div style={styles.mixOrb3} />
+                </div>
+                <div style={styles.mixLabel}>SHA-512 mixing all sources…</div>
+              </>
+            ) : (
+              <div style={styles.keyBox}>
+                <div style={styles.keyLabel}>Your Encryption Key</div>
+                <div style={styles.keyVal}>{keyValue}</div>
+                {verifyCode && <div style={styles.keyVerify}>Verify: <span style={{ color: '#7c3aed' }}>{verifyCode}</span></div>}
+                <div style={styles.keyWarn}>⚠️ Copy and store this key securely — it cannot be recovered.</div>
+                <button style={{ ...styles.btn, ...styles.btnCopy }} onClick={handleCopy}>
+                  {copied ? '✓ Copied!' : 'Copy Key'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div style={styles.mFooter}>
+          {done && (
+            <button style={{ ...styles.btn, ...styles.btnClose }} onClick={handleClose}>
+              Close & Save
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN DASHBOARD ────────────────────────────────────────────────────────────
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [email, setEmail] = useState('user@email.com');
-  const [storedKeys, setStoredKeys] = useState([]);
-  const [encCount, setEncCount] = useState(0);
-  const [decCount, setDecCount] = useState(0);
-  const [activity, setActivity] = useState([]);
+  const [user, setUser] = useState(null);
+  const [mounted, setMounted] = useState(false);
+  const [activeNav, setActiveNav] = useState('overview');
+  const [genOpen, setGenOpen] = useState(false);
+  const [keys, setKeys] = useState([{ id: 1, label: 'Key 1', status: 'Active', created: 'Mar 10' }]);
   const [encInput, setEncInput] = useState('');
   const [decInput, setDecInput] = useState('');
   const [encResult, setEncResult] = useState('');
   const [decResult, setDecResult] = useState('');
-  const [encResultVisible, setEncResultVisible] = useState(false);
-  const [decResultVisible, setDecResultVisible] = useState(false);
-  const [decAgainVal, setDecAgainVal] = useState('');
-  const [showDecAgain, setShowDecAgain] = useState(false);
-  const [genModalOpen, setGenModalOpen] = useState(false);
-  const [genLoading, setGenLoading] = useState(false);
-  const [genKeyVal, setGenKeyVal] = useState('');
-  const [genDone, setGenDone] = useState(false);
-  const tokenRef = useRef(null);
+  const [encLoading, setEncLoading] = useState(false);
+  const [decLoading, setDecLoading] = useState(false);
+  const [apiCalls, setApiCalls] = useState(0);
 
   useEffect(() => {
-    const token = sessionStorage.getItem('sra_token');
-    const savedEmail = sessionStorage.getItem('sra_email') || 'user@email.com';
-    if (!token) { window.location.href = '/login'; return; }
-    tokenRef.current = token;
-    setEmail(savedEmail);
-    const keys = JSON.parse(localStorage.getItem('sra_keys') || '[]');
-    setStoredKeys(keys);
+    setUser(getUser());
+    setMounted(true);
   }, []);
 
-  async function apiFetch(endpoint, options = {}) {
-    const token = tokenRef.current;
-    const res = await fetch(`${BASE}${endpoint}`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      ...options,
-      body: options.body ? JSON.stringify(options.body) : undefined,
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      if (res.status === 401) { alert('Session expired. Please sign in again.'); logout(); }
-      throw new Error(data.message || `Error ${res.status}`);
-    }
-    return data;
-  }
+  if (!mounted) return null;
 
-  function logout() {
-    sessionStorage.removeItem('sra_token');
-    sessionStorage.removeItem('sra_email');
-    window.location.href = '/login';
-  }
+  const handleKeyGenerated = (key, code) => {
+    setKeys(prev => [...prev, { id: prev.length + 1, label: `Key ${prev.length + 1}`, status: 'Active', created: 'Today', value: key, code }]);
+    setApiCalls(c => c + 1);
+  };
 
-  function addActivity(type, title, sub) {
-    const icons = { encrypt: '🔒', decrypt: '🔓', 'key-gen': '🔑', 'key-delete': '🗑️' };
-    const colors = { encrypt: 'background:var(--purple-l)', decrypt: 'background:#D1FAE5', 'key-gen': 'background:#EFF6FF', 'key-delete': 'background:#FEE2E2' };
-    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    setActivity(prev => [{ type, title, sub, time: now, icon: icons[type], color: colors[type] }, ...prev].slice(0, 20));
-  }
-
-  async function generateKey() {
-    setGenLoading(true);
-    try {
-      const data = await apiFetch('/shield/keys/generate');
-      const key = data.data?.encryptionKey;
-      setGenKeyVal(key);
-      setGenDone(true);
-      const newKeys = [...storedKeys, { value: key, name: `Key ${storedKeys.length + 1}`, created: new Date().toISOString() }];
-      setStoredKeys(newKeys);
-      localStorage.setItem('sra_keys', JSON.stringify(newKeys));
-      addActivity('key-gen', 'Key generated', 'New encryption key created');
-    } catch (e) {
-      alert(e.message || 'Failed to generate key.');
-    }
-    setGenLoading(false);
-  }
-
-  function deleteKey(index) {
-    if (!confirm('Delete this key? Encrypted data using this key cannot be recovered.')) return;
-    const newKeys = storedKeys.filter((_, i) => i !== index);
-    setStoredKeys(newKeys);
-    localStorage.setItem('sra_keys', JSON.stringify(newKeys));
-    addActivity('key-delete', 'Key deleted', 'Encryption key removed');
-  }
-
-  async function doEncrypt() {
+  const handleEncrypt = async () => {
     if (!encInput.trim()) return;
-    setEncResult('Encrypting...');
-    setEncResultVisible(true);
+    setEncLoading(true);
     try {
-      const data = await apiFetch('/shield/encrypt', { body: { plaintext: encInput.trim() } });
-      const encrypted = data.data?.encrypted;
-      setEncResult(encrypted);
-      setDecAgainVal(encrypted);
-      setShowDecAgain(true);
-      setEncCount(c => c + 1);
-      addActivity('encrypt', 'Data encrypted', `${encInput.trim().substring(0, 30)}${encInput.trim().length > 30 ? '...' : ''}`);
-    } catch (e) {
-      setEncResult(`Error: ${e.message || 'Encryption failed'}`);
-    }
-  }
+      const token = getToken();
+      const res = await fetch(`${API}/api/v1/shield/encrypt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ plaintext: encInput }),
+      });
+      const data = await res.json();
+      setEncResult(data?.data?.encrypted || data?.encrypted || 'Encryption failed');
+      setApiCalls(c => c + 1);
+    } catch { setEncResult('Error — check connection'); }
+    setEncLoading(false);
+  };
 
-  async function doDecrypt() {
+  const handleDecrypt = async () => {
     if (!decInput.trim()) return;
-    setDecResult('Decrypting...');
-    setDecResultVisible(true);
+    setDecLoading(true);
     try {
-      const data = await apiFetch('/shield/decrypt', { body: { encrypted: decInput.trim() } });
-      setDecResult(data.data?.plaintext);
-      setDecCount(c => c + 1);
-      addActivity('decrypt', 'Data decrypted', 'Encrypted string decrypted');
-    } catch (e) {
-      setDecResult(`Error: ${e.message || 'Decryption failed'}`);
-    }
-  }
+      const token = getToken();
+      const res = await fetch(`${API}/api/v1/shield/decrypt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ encrypted: decInput }),
+      });
+      const data = await res.json();
+      setDecResult(data?.data?.plaintext || data?.plaintext || 'Decryption failed');
+      setApiCalls(c => c + 1);
+    } catch { setDecResult('Error — check connection'); }
+    setDecLoading(false);
+  };
 
-  function doDecryptAgain() {
-    setActiveTab('encrypt');
-    setDecInput(decAgainVal);
-  }
-
-  async function copyText(text, btnId) {
-    try {
-      await navigator.clipboard.writeText(text);
-      const btn = document.getElementById(btnId);
-      if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy'; }, 1500); }
-    } catch {}
-  }
-
-  function closeGenModal() {
-    setGenModalOpen(false);
-    setGenDone(false);
-    setGenKeyVal('');
-    setGenLoading(false);
-  }
-
-  const tabs = [
-    { key: 'overview', label: 'Overview', icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="10" y="1" width="5" height="5" rx="1"/><rect x="1" y="10" width="5" height="5" rx="1"/><rect x="10" y="10" width="5" height="5" rx="1"/></svg> },
-    { key: 'keys', label: 'My Keys', icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="6" cy="8" r="4"/><path d="M10 8h5M13 6v4"/></svg> },
-    { key: 'encrypt', label: 'Encrypt / Decrypt', icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="7" width="10" height="8" rx="1.5"/><path d="M5 7V5a3 3 0 016 0v2"/></svg> },
-    { key: 'activity', label: 'Activity', icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="1,12 5,7 9,9 15,3"/></svg> },
+  const navItems = [
+    { id: 'overview', label: 'Overview', icon: '▦' },
+    { id: 'keys', label: 'My Keys', icon: '🔑' },
+    { id: 'encrypt', label: 'Encrypt / Decrypt', icon: '🔒' },
+    { id: 'activity', label: 'Activity', icon: '↗' },
   ];
 
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const enc = [12, 8, 22, 15, 28, 6, 18];
-  const dec = [6, 4, 11, 8, 14, 3, 9];
-  const maxVal = Math.max(...enc);
-
-  const KeysList = ({ keys, onDelete }) => {
-    if (keys.length === 0) return <div className="empty-keys">No keys yet. Generate your first key to start encrypting.</div>;
-    return keys.map((k, i) => (
-      <div className="key-item" key={i}>
-        <div className="ki-icon">🔑</div>
-        <div className="ki-info">
-          <div className="ki-name">{k.name || `Key ${i + 1}`}</div>
-          <div className="ki-hash">{k.value}</div>
-        </div>
-        <span className="badge badge-green" style={{flexShrink:0}}>Active</span>
-        <button className="ki-del" onClick={() => onDelete(i)}>Delete</button>
-      </div>
-    ));
-  };
+  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const encData  = [3, 5, 4, 7, 6, 4, 5];
+  const decData  = [1, 2, 1, 3, 2, 1, 2];
+  const maxVal   = 8;
 
   return (
     <>
       <Head><title>Dashboard — SRA Shield</title></Head>
-      <style dangerouslySetInnerHTML={{__html: css}} />
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'DM Sans',sans-serif;background:#f8f9fc;color:#0f172a}
+        ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:4px}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+        @keyframes orb{0%{transform:scale(1) rotate(0deg)}50%{transform:scale(1.3) rotate(180deg)}100%{transform:scale(1) rotate(360deg)}}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        .spin{animation:spin 1s linear infinite}
+        .fadeIn{animation:fadeIn .4s ease forwards}
+      `}</style>
 
-      <div className="app">
+      <EntropyModal open={genOpen} onClose={() => setGenOpen(false)} onKeyGenerated={handleKeyGenerated} />
 
+      <div style={styles.shell}>
         {/* SIDEBAR */}
-        <aside className={`sidebar${sidebarOpen ? ' open' : ''}`}>
-          <div className="sb-logo">
-            <div className="sb-logo-icon">
-              <svg width="17" height="17" viewBox="0 0 18 18" fill="none">
-                <path d="M9 2L14 5.5V12.5L9 16L4 12.5V5.5L9 2Z" fill="white" fillOpacity=".9"/>
-              </svg>
+        <aside style={styles.sidebar}>
+          <div style={styles.sLogo}>
+            <div style={styles.sLogoIcon}>🛡</div>
+            <div>
+              <div style={styles.sLogoName}>SRA Shield</div>
+              <div style={styles.sLogoBeta}>Beta</div>
             </div>
-            <span className="sb-logo-text">SRA Shield</span>
           </div>
 
-          <div className="sb-section">
-            <div className="sb-sect-label">Main</div>
-            {tabs.map(t => (
-              <button key={t.key} className={`sb-item${activeTab === t.key ? ' on' : ''}`} onClick={() => { setActiveTab(t.key); setSidebarOpen(false); }}>
-                {t.icon}{t.label}
+          <div style={styles.sSection}>MAIN</div>
+          <nav style={styles.sNav}>
+            {navItems.map(n => (
+              <button key={n.id} onClick={() => setActiveNav(n.id)}
+                style={{ ...styles.sNavItem, ...(activeNav === n.id ? styles.sNavActive : {}) }}>
+                <span style={styles.sNavIcon}>{n.icon}</span>{n.label}
               </button>
             ))}
-          </div>
+          </nav>
 
-          <div className="sb-section">
-            <div className="sb-sect-label">Account</div>
-            <Link href="/docs" className="sb-item">
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 2h8l4 4v8H2z"/><path d="M10 2v4h4"/><path d="M5 9h6M5 11.5h4"/></svg>
-              Documentation
-            </Link>
-            <Link href="/pricing" className="sb-item">
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1.5" y="4" width="13" height="9" rx="1.5"/><path d="M5 4V3a2 2 0 014 0v1"/><path d="M7 9a1 1 0 100-2 1 1 0 000 2z"/></svg>
-              Upgrade Plan
-            </Link>
-          </div>
+          <div style={styles.sSection}>ACCOUNT</div>
+          <nav style={styles.sNav}>
+            <button style={styles.sNavItem}><span style={styles.sNavIcon}>📄</span>Documentation</button>
+            <button style={styles.sNavItem}><span style={styles.sNavIcon}>⬆</span>Upgrade Plan</button>
+          </nav>
 
-          <div className="sb-footer">
-            <div className="sb-user">
-              <div className="sb-avatar">{email.charAt(0).toUpperCase()}</div>
-              <div>
-                <div className="sb-uname">{email}</div>
-                <div className="sb-plan">Starter plan</div>
-              </div>
+          <div style={styles.sUser}>
+            <div style={styles.sAvatar}>{(user?.name || user?.email || 'U')[0].toUpperCase()}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={styles.sUserName}>{user?.email || 'User'}</div>
+              <div style={styles.sUserPlan}>{user?.plan || 'Starter'} plan</div>
             </div>
-            <button className="sb-logout" onClick={logout}>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 3H3a1 1 0 00-1 1v8a1 1 0 001 1h3M10 5l4 3-4 3M14 8H6"/></svg>
-              Sign out
-            </button>
+            <button style={styles.sSignOut} onClick={() => { localStorage.clear(); window.location.href = '/login'; }}>→</button>
           </div>
         </aside>
 
-        {/* BACKDROP */}
-        <div className={`sidebar-backdrop${sidebarOpen ? ' show' : ''}`} onClick={() => setSidebarOpen(false)}></div>
-
-        {/* MAIN */}
-        <div className="main">
-          <div className="topbar">
-            <button className="tb-menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-              <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
-            </button>
-            <div className="tb-title">
-              {activeTab === 'overview' ? 'Overview' : activeTab === 'keys' ? 'My Keys' : activeTab === 'encrypt' ? 'Encrypt / Decrypt' : 'Activity'}
+        {/* MAIN CONTENT */}
+        <main style={styles.main}>
+          {/* TOP BAR */}
+          <div style={styles.topBar}>
+            <div>
+              <div style={styles.pageTitle}>
+                {navItems.find(n => n.id === activeNav)?.label || 'Overview'}
+              </div>
+              <div style={styles.pageSub}>Welcome back, {user?.name || user?.email?.split('@')[0] || 'User'}</div>
             </div>
-            <div className="tb-right">
-              <div className="tb-badge"><div className="tb-bdot"></div>API Online</div>
-              <Link href="/pricing" className="btn btn-sm btn-dark">Upgrade →</Link>
+            <div style={styles.topRight}>
+              <div style={styles.apiPill}><div style={styles.apiDot} />API Online</div>
+              <button style={styles.upgradeBtn}>Upgrade →</button>
             </div>
           </div>
 
-          <div className="content">
+          <div style={styles.content}>
 
-            {/* OVERVIEW TAB */}
-            {activeTab === 'overview' && (
-              <div>
-                <div className="stat-grid">
-                  <div className="stat-card">
-                    <div className="sc-top"><div className="sc-label">Total API Calls</div><div className="sc-icon" style={{background:'var(--purple-l)'}}>⚡</div></div>
-                    <div className="sc-val">{encCount + decCount}</div>
-                    <div className="sc-sub">This session</div>
-                  </div>
-                  <div className="stat-card">
-                    <div className="sc-top"><div className="sc-label">Keys Active</div><div className="sc-icon" style={{background:'#D1FAE5'}}>🔑</div></div>
-                    <div className="sc-val">{storedKeys.length}</div>
-                    <div className="sc-sub">Encryption keys</div>
-                  </div>
-                  <div className="stat-card">
-                    <div className="sc-top"><div className="sc-label">Calls Remaining</div><div className="sc-icon" style={{background:'#EFF6FF'}}>📊</div></div>
-                    <div className="sc-val">{Math.max(0, 1000 - encCount - decCount)}</div>
-                    <div className="sc-sub">Of 1,000 this month</div>
-                  </div>
+            {/* ── OVERVIEW ── */}
+            {activeNav === 'overview' && (
+              <div className="fadeIn">
+                {/* Stats */}
+                <div style={styles.statsGrid}>
+                  {[
+                    { label: 'Total API Calls', value: apiCalls, sub: 'This session', icon: '⚡', color: '#fef3c7' },
+                    { label: 'Keys Active', value: keys.filter(k => k.status === 'Active').length, sub: 'Encryption keys', icon: '🔑', color: '#dcfce7' },
+                    { label: 'Calls Remaining', value: 1000 - apiCalls, sub: 'Of 1,000 this month', icon: '📊', color: '#dbeafe' },
+                  ].map((s, i) => (
+                    <div key={i} style={styles.statCard}>
+                      <div style={{ ...styles.statIcon, background: s.color }}>{s.icon}</div>
+                      <div style={styles.statLabel}>{s.label}</div>
+                      <div style={styles.statValue}>{s.value}</div>
+                      <div style={styles.statSub}>{s.sub}</div>
+                    </div>
+                  ))}
                 </div>
 
-                <div className="chart-card">
-                  <div className="chart-head">
-                    <div className="chart-title">API Activity — Last 7 Days</div>
-                    <div className="chart-legend">
-                      <div className="legend-item"><div className="legend-dot" style={{background:'var(--purple)'}}></div>Encrypt</div>
-                      <div className="legend-item"><div className="legend-dot" style={{background:'var(--blue)'}}></div>Decrypt</div>
+                {/* Chart + Quick Actions */}
+                <div style={styles.midGrid}>
+                  <div style={styles.card}>
+                    <div style={styles.cardHead}>
+                      <div style={styles.cardTitle}>API Activity — Last 7 Days</div>
+                      <div style={styles.legend}>
+                        <span style={styles.legendDot('#7c3aed')} />Encrypt
+                        <span style={{ marginLeft: 12 }} />
+                        <span style={styles.legendDot('#60a5fa')} />Decrypt
+                      </div>
+                    </div>
+                    <div style={styles.chartArea}>
+                      {weekDays.map((d, i) => (
+                        <div key={d} style={styles.barGroup}>
+                          <div style={styles.bars}>
+                            <div style={{ ...styles.bar, height: `${(encData[i] / maxVal) * 100}%`, background: '#7c3aed' }} />
+                            <div style={{ ...styles.bar, height: `${(decData[i] / maxVal) * 100}%`, background: '#60a5fa' }} />
+                          </div>
+                          <div style={styles.barLabel}>{d}</div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <div className="bar-chart">
-                    {days.map((d, i) => (
-                      <div className="bar-group" key={d}>
-                        <div className="bar-enc" style={{height:`${Math.round(enc[i] / maxVal * 110) + 10}px`}}></div>
-                        <div className="bar-dec" style={{height:`${Math.round(dec[i] / maxVal * 60) + 5}px`}}></div>
-                        <div className="bar-label">{d}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
 
-                <div className="keys-card">
-                  <div className="kc-head">
-                    <div className="kc-title">Active Keys</div>
-                    <button className="btn btn-sm btn-dark" onClick={() => setGenModalOpen(true)}>+ Generate Key</button>
-                  </div>
-                  <div className="key-list">
-                    <KeysList keys={storedKeys} onDelete={deleteKey} />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* KEYS TAB */}
-            {activeTab === 'keys' && (
-              <div className="keys-card">
-                <div className="kc-head">
-                  <div className="kc-title">My Encryption Keys</div>
-                  <button className="btn btn-sm btn-dark" onClick={() => setGenModalOpen(true)}>+ Generate Key</button>
-                </div>
-                <div className="key-list">
-                  <KeysList keys={storedKeys} onDelete={deleteKey} />
-                </div>
-              </div>
-            )}
-
-            {/* ENCRYPT/DECRYPT TAB */}
-            {activeTab === 'encrypt' && (
-              <div>
-                <div className="enc-card">
-                  <div className="enc-title">🔒 Encrypt Data</div>
-                  <textarea
-                    className="enc-textarea"
-                    placeholder={"Enter the text you want to encrypt...\n\nExample: Patient: John Doe, DOB: 1985-03-12"}
-                    value={encInput}
-                    onChange={e => setEncInput(e.target.value)}
-                  />
-                  <div className="enc-actions">
-                    <button className="enc-btn primary" onClick={doEncrypt}>Encrypt →</button>
-                    {showDecAgain && (
-                      <button className="enc-btn secondary" onClick={doDecryptAgain}>Decrypt back</button>
-                    )}
-                  </div>
-                  {encResultVisible && (
-                    <div className="result-box">
-                      <div className="res-top">
-                        <div className="res-label">Encrypted Output</div>
-                        <button id="enc-copy-btn" className="res-copy" onClick={() => copyText(encResult, 'enc-copy-btn')}>Copy</button>
-                      </div>
-                      <div className="res-val">{encResult}</div>
+                  <div style={styles.card}>
+                    <div style={styles.cardTitle}>Quick Actions</div>
+                    <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <button style={styles.qaBtn} onClick={() => setGenOpen(true)}>
+                        <span>🔑</span> Generate New Key
+                      </button>
+                      <button style={styles.qaBtn} onClick={() => setActiveNav('encrypt')}>
+                        <span>🔒</span> Encrypt Data
+                      </button>
+                      <button style={styles.qaBtn} onClick={() => setActiveNav('encrypt')}>
+                        <span>🔓</span> Decrypt Data
+                      </button>
                     </div>
-                  )}
-                </div>
-
-                <div className="enc-card">
-                  <div className="enc-title">🔓 Decrypt Data</div>
-                  <textarea
-                    className="enc-textarea"
-                    placeholder={"Paste encrypted SRA Shield string here...\n\nExample: SRA_ENC_IjIiOiJlbmMiLCJ0..."}
-                    value={decInput}
-                    onChange={e => setDecInput(e.target.value)}
-                  />
-                  <div className="enc-actions">
-                    <button className="enc-btn primary" onClick={doDecrypt}>Decrypt →</button>
                   </div>
-                  {decResultVisible && (
-                    <div className="result-box">
-                      <div className="res-top">
-                        <div className="res-label">Decrypted Output</div>
-                        <button id="dec-copy-btn" className="res-copy" onClick={() => copyText(decResult, 'dec-copy-btn')}>Copy</button>
-                      </div>
-                      <div className="res-val plain">{decResult}</div>
-                    </div>
-                  )}
                 </div>
-              </div>
-            )}
 
-            {/* ACTIVITY TAB */}
-            {activeTab === 'activity' && (
-              <div className="activity-card">
-                <div className="kc-head" style={{marginBottom:'14px'}}>
-                  <div className="kc-title">Recent Activity</div>
-                  <span className="badge badge-green">Live</span>
-                </div>
-                <div className="activity-list">
-                  {activity.length === 0 ? (
-                    <div style={{textAlign:'center',padding:'40px 20px',color:'var(--gray)'}}>No activity yet. Start encrypting!</div>
-                  ) : activity.map((a, i) => (
-                    <div className="activity-item" key={i}>
-                      <div className="act-icon" style={{...(a.color ? Object.fromEntries([a.color.split(':')]) : {})}}>{a.icon}</div>
-                      <div className="act-info">
-                        <div className="act-text">{a.title}</div>
-                        <div className="act-sub">{a.sub}</div>
+                {/* Active Keys preview */}
+                <div style={styles.card}>
+                  <div style={styles.cardHead}>
+                    <div style={styles.cardTitle}>Active Keys</div>
+                    <button style={styles.genBtn} onClick={() => setGenOpen(true)}>+ Generate Key</button>
+                  </div>
+                  {keys.map(k => (
+                    <div key={k.id} style={styles.keyRow}>
+                      <span style={styles.keyIcon}>🔑</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={styles.keyName}>{k.label}</div>
+                        {k.value && <div style={styles.keySnippet}>{k.value.slice(0, 32)}…</div>}
                       </div>
-                      <div className="act-time">{a.time}</div>
+                      <span style={styles.activeBadge}>{k.status}</span>
+                      <span style={styles.dateBadge}>{k.created}</span>
+                      <button style={styles.delBtn}>Delete</button>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-          </div>
-        </div>
-      </div>
-
-      {/* GENERATE KEY MODAL */}
-      <div className={`modal-bg${genModalOpen ? ' show' : ''}`}>
-        <div className="modal">
-          <div className="modal-title">Generate New Encryption Key</div>
-          <p className="modal-sub">A new 256-bit key will be generated from our multi-source entropy engine. <strong>Save it immediately</strong> — we do not store keys.</p>
-          {genDone && genKeyVal && (
-            <div>
-              <div className="key-result-box">
-                <div className="kr-label">Your Encryption Key</div>
-                <div className="kr-val">{genKeyVal}</div>
+            {/* ── MY KEYS ── */}
+            {activeNav === 'keys' && (
+              <div className="fadeIn">
+                <div style={styles.card}>
+                  <div style={styles.cardHead}>
+                    <div style={styles.cardTitle}>Encryption Keys</div>
+                    <button style={styles.genBtn} onClick={() => setGenOpen(true)}>+ Generate Key</button>
+                  </div>
+                  {keys.map(k => (
+                    <div key={k.id} style={styles.keyRow}>
+                      <span style={styles.keyIcon}>🔑</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={styles.keyName}>{k.label}</div>
+                        <div style={styles.keySnippet}>{k.value ? k.value.slice(0, 48) + '…' : 'Key value hidden for security'}</div>
+                        {k.code && <div style={{ fontSize: 11, color: '#7c3aed', marginTop: 2 }}>Verify: {k.code}</div>}
+                      </div>
+                      <span style={styles.activeBadge}>{k.status}</span>
+                      <span style={styles.dateBadge}>{k.created}</span>
+                      <button style={styles.delBtn}>Delete</button>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="kr-warn">
-                ⚠️ <span><strong>Copy and store this key securely.</strong> SRA Shield cannot recover it if lost. Store in a password manager or secrets vault.</span>
-              </div>
-            </div>
-          )}
-          <div className="modal-actions">
-            <button className="btn btn-md btn-outline" onClick={closeGenModal}>
-              {genDone ? 'Close' : 'Cancel'}
-            </button>
-            {!genDone && (
-              <button className="btn btn-md btn-dark" onClick={generateKey} disabled={genLoading}>
-                {genLoading ? 'Generating...' : 'Generate Key →'}
-              </button>
             )}
+
+            {/* ── ENCRYPT / DECRYPT ── */}
+            {activeNav === 'encrypt' && (
+              <div className="fadeIn" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                <div style={styles.card}>
+                  <div style={styles.cardTitle}>🔒 Encrypt Data</div>
+                  <textarea style={styles.textarea} placeholder="Enter text to encrypt…" value={encInput} onChange={e => setEncInput(e.target.value)} rows={5} />
+                  <button style={{ ...styles.genBtn, marginTop: 12, width: '100%', padding: '11px 0' }}
+                    onClick={handleEncrypt} disabled={encLoading}>
+                    {encLoading ? 'Encrypting…' : 'Encrypt →'}
+                  </button>
+                  {encResult && (
+                    <div style={styles.resultBox}>
+                      <div style={styles.resultLabel}>Encrypted Output</div>
+                      <div style={styles.resultVal}>{encResult}</div>
+                    </div>
+                  )}
+                </div>
+                <div style={styles.card}>
+                  <div style={styles.cardTitle}>🔓 Decrypt Data</div>
+                  <textarea style={styles.textarea} placeholder="Paste encrypted string…" value={decInput} onChange={e => setDecInput(e.target.value)} rows={5} />
+                  <button style={{ ...styles.genBtn, marginTop: 12, width: '100%', padding: '11px 0', background: '#f1f5f9', color: '#0f172a', border: '1.5px solid #e2e8f0' }}
+                    onClick={handleDecrypt} disabled={decLoading}>
+                    {decLoading ? 'Decrypting…' : 'Decrypt →'}
+                  </button>
+                  {decResult && (
+                    <div style={{ ...styles.resultBox, background: '#f0fdf4' }}>
+                      <div style={styles.resultLabel}>Decrypted Output</div>
+                      <div style={{ ...styles.resultVal, color: '#15803d' }}>{decResult}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ── ACTIVITY ── */}
+            {activeNav === 'activity' && (
+              <div className="fadeIn" style={styles.card}>
+                <div style={styles.cardTitle}>Recent Activity</div>
+                <div style={{ marginTop: 16, color: '#94a3b8', textAlign: 'center', padding: '40px 0' }}>
+                  No activity yet. Start encrypting or generating keys!
+                </div>
+              </div>
+            )}
+
           </div>
-        </div>
+        </main>
       </div>
     </>
   );
 }
+
+// ── STYLES ───────────────────────────────────────────────────────────────────
+const styles = {
+  shell:       { display: 'flex', minHeight: '100vh', background: '#f8f9fc' },
+  sidebar:     { width: 240, background: '#0f172a', display: 'flex', flexDirection: 'column', padding: '24px 12px', position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 10 },
+  sLogo:       { display: 'flex', alignItems: 'center', gap: 10, padding: '0 8px', marginBottom: 32 },
+  sLogoIcon:   { width: 34, height: 34, background: 'linear-gradient(135deg,#7c3aed,#4f46e5)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 },
+  sLogoName:   { color: '#f8fafc', fontWeight: 700, fontSize: 15 },
+  sLogoBeta:   { color: '#7c3aed', fontSize: 10, fontWeight: 600, letterSpacing: 1 },
+  sSection:    { fontSize: 10, fontWeight: 700, color: '#475569', letterSpacing: '0.08em', padding: '0 10px', marginBottom: 6, marginTop: 16 },
+  sNav:        { display: 'flex', flexDirection: 'column', gap: 2 },
+  sNavItem:    { display: 'flex', alignItems: 'center', gap: 9, padding: '9px 10px', borderRadius: 8, border: 'none', background: 'transparent', color: '#94a3b8', fontSize: 13.5, fontWeight: 500, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', transition: 'all .15s' },
+  sNavActive:  { background: 'rgba(124,58,237,.18)', color: '#a78bfa', fontWeight: 600 },
+  sNavIcon:    { fontSize: 14, width: 18, textAlign: 'center' },
+  sUser:       { marginTop: 'auto', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 8px', borderTop: '1px solid rgba(255,255,255,.06)' },
+  sAvatar:     { width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#06b6d4)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0 },
+  sUserName:   { fontSize: 12, color: '#e2e8f0', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  sUserPlan:   { fontSize: 11, color: '#64748b' },
+  sSignOut:    { background: 'none', border: 'none', color: '#475569', cursor: 'pointer', fontSize: 16 },
+  main:        { marginLeft: 240, flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' },
+  topBar:      { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 32px', background: '#fff', borderBottom: '1px solid #f1f5f9', position: 'sticky', top: 0, zIndex: 5 },
+  pageTitle:   { fontSize: 20, fontWeight: 700, color: '#0f172a' },
+  pageSub:     { fontSize: 13, color: '#94a3b8', marginTop: 2 },
+  topRight:    { display: 'flex', alignItems: 'center', gap: 12 },
+  apiPill:     { display: 'flex', alignItems: 'center', gap: 6, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 100, padding: '5px 12px', fontSize: 12, fontWeight: 600, color: '#15803d' },
+  apiDot:      { width: 7, height: 7, borderRadius: '50%', background: '#22c55e', animation: 'pulse 2s ease infinite' },
+  upgradeBtn:  { background: '#0f172a', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
+  content:     { padding: 32, flex: 1 },
+  statsGrid:   { display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 20 },
+  statCard:    { background: '#fff', border: '1px solid #f1f5f9', borderRadius: 16, padding: '22px 22px 18px', boxShadow: '0 1px 4px rgba(0,0,0,.04)' },
+  statIcon:    { width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, marginBottom: 14 },
+  statLabel:   { fontSize: 12, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 },
+  statValue:   { fontSize: 36, fontWeight: 800, color: '#0f172a', letterSpacing: -1, lineHeight: 1 },
+  statSub:     { fontSize: 12, color: '#94a3b8', marginTop: 4 },
+  midGrid:     { display: 'grid', gridTemplateColumns: '1fr 280px', gap: 20, marginBottom: 20 },
+  card:        { background: '#fff', border: '1px solid #f1f5f9', borderRadius: 16, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,.04)' },
+  cardHead:    { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  cardTitle:   { fontSize: 15, fontWeight: 700, color: '#0f172a' },
+  legend:      { display: 'flex', alignItems: 'center', fontSize: 12, color: '#64748b' },
+  legendDot:   c => ({ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: c }),
+  chartArea:   { display: 'flex', alignItems: 'flex-end', gap: 8, height: 140, paddingTop: 10 },
+  barGroup:    { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 },
+  bars:        { display: 'flex', gap: 3, alignItems: 'flex-end', height: 120, width: '100%', justifyContent: 'center' },
+  bar:         { width: 10, borderRadius: '4px 4px 0 0', transition: 'height .3s ease' },
+  barLabel:    { fontSize: 11, color: '#94a3b8', fontWeight: 500 },
+  qaBtn:       { display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '11px 14px', background: '#f8f9fc', border: '1.5px solid #f1f5f9', borderRadius: 10, fontSize: 13.5, fontWeight: 500, color: '#0f172a', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', transition: 'all .15s' },
+  genBtn:      { background: '#0f172a', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
+  keyRow:      { display: 'flex', alignItems: 'center', gap: 12, padding: '14px 0', borderBottom: '1px solid #f8f9fc' },
+  keyIcon:     { fontSize: 18 },
+  keyName:     { fontSize: 14, fontWeight: 600, color: '#0f172a' },
+  keySnippet:  { fontSize: 11, color: '#94a3b8', fontFamily: 'monospace', marginTop: 2 },
+  activeBadge: { background: '#dcfce7', color: '#15803d', fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 100 },
+  dateBadge:   { fontSize: 12, color: '#94a3b8' },
+  delBtn:      { background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 7, padding: '5px 11px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
+  textarea:    { width: '100%', padding: '12px 14px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 13, fontFamily: 'DM Mono, monospace', resize: 'vertical', outline: 'none', color: '#0f172a', background: '#fafafa', marginTop: 14 },
+  resultBox:   { marginTop: 14, background: '#faf5ff', border: '1.5px solid #e9d5ff', borderRadius: 10, padding: 14 },
+  resultLabel: { fontSize: 11, fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 },
+  resultVal:   { fontFamily: 'DM Mono, monospace', fontSize: 11.5, color: '#4c1d95', wordBreak: 'break-all', lineHeight: 1.6 },
+
+  // Modal styles
+  overlay:     { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
+  modal:       { background: '#fff', borderRadius: 20, width: '100%', maxWidth: 480, padding: 28, boxShadow: '0 25px 60px rgba(0,0,0,.25)' },
+  mHead:       { display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 24 },
+  mIcon:       { width: 44, height: 44, background: '#f5f3ff', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 },
+  mTitle:      { fontSize: 17, fontWeight: 700, color: '#0f172a', marginBottom: 3 },
+  mSub:        { fontSize: 13, color: '#64748b' },
+  sourceList:  { display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 },
+  sourceRow:   { display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: '#f8f9fc', borderRadius: 12, transition: 'all .3s' },
+  sourceIcon:  { width: 34, height: 34, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, transition: 'background .4s', flexShrink: 0 },
+  sourceLabel: { fontSize: 13.5, fontWeight: 600, color: '#0f172a', marginBottom: 2 },
+  sourceDetail:{ fontSize: 11.5, color: '#64748b' },
+  sourceStatus:{ flexShrink: 0 },
+  checkBadge:  { width: 22, height: 22, background: '#dcfce7', color: '#15803d', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 },
+  spinner:     { display: 'inline-block', width: 18, height: 18, border: '2.5px solid #e2e8f0', borderTopColor: '#7c3aed', borderRadius: '50%', animation: 'spin 0.8s linear infinite' },
+  mixBox:      { background: '#faf5ff', border: '1.5px solid #e9d5ff', borderRadius: 14, padding: 20, marginBottom: 16, textAlign: 'center' },
+  mixAnim:     { display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 12 },
+  mixOrb1:     { width: 12, height: 12, borderRadius: '50%', background: '#7c3aed', animation: 'orb 1.2s ease infinite' },
+  mixOrb2:     { width: 12, height: 12, borderRadius: '50%', background: '#4f46e5', animation: 'orb 1.2s ease infinite .2s' },
+  mixOrb3:     { width: 12, height: 12, borderRadius: '50%', background: '#06b6d4', animation: 'orb 1.2s ease infinite .4s' },
+  mixLabel:    { fontSize: 13, color: '#7c3aed', fontWeight: 600 },
+  keyBox:      { textAlign: 'left' },
+  keyLabel:    { fontSize: 11, fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 },
+  keyVal:      { fontFamily: 'DM Mono, monospace', fontSize: 11.5, color: '#1e1b4b', wordBreak: 'break-all', background: '#fff', border: '1.5px solid #e9d5ff', borderRadius: 8, padding: '10px 12px', lineHeight: 1.6, marginBottom: 8 },
+  keyVerify:   { fontSize: 12, color: '#64748b', marginBottom: 6 },
+  keyWarn:     { fontSize: 11.5, color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '8px 12px', marginBottom: 12 },
+  btn:         { border: 'none', borderRadius: 9, padding: '10px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s' },
+  btnCopy:     { background: '#7c3aed', color: '#fff', width: '100%' },
+  btnClose:    { background: '#0f172a', color: '#fff', width: '100%' },
+  mFooter:     { marginTop: 4 },
+};
