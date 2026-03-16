@@ -114,7 +114,7 @@ export default function Dashboard() {
     navActiveTxt:'#6c9bff',
     navTxt:      '#8896b3',
     // Main area — clean light
-    pageBg:'#fff4e6',
+    pageBg:'#f4f6fb',
     cardBg:'#fff8ec',
     cardBorder:'#ffe0b2',
     cardShadow:'0 1px 6px rgba(255,159,67,.1)',
@@ -134,8 +134,8 @@ export default function Dashboard() {
     green:       '#28c76f', greenBg: '#eef9f0', greenBdr:'#b8f0c8',
     red:         '#ea5455', redBg:   '#fff0f0', redBdr:  '#ffc0c0',
     // Topbar
-    topBg:'#fff8ec',
-    topBorder:'#ffe0b2',
+    topBg:'#ffffff',
+    topBorder:'#e8edf5',
   };
 
   return (
