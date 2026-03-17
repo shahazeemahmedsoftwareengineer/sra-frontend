@@ -33,8 +33,8 @@ export default function Login() {
       });
       const data = await res.json();
       if (res.ok && data.data?.token) {
-        sessionStorage.setItem('sra_token', data.data.token);
-        sessionStorage.setItem('sra_email', email);
+        localStorage.setItem('sra_token', data.data.token);
+        localStorage.setItem('sra_user', JSON.stringify(data.data.user));
         setSuccess(true);
         setTimeout(() => { window.location.href = '/dashboard'; }, 800);
       } else {
