@@ -13,7 +13,6 @@ function getUser() {
   try { return JSON.parse(localStorage.getItem('sra_user') || 'null'); } catch { return null; }
 }
 
-
 // ── USAGE CARD ───────────────────────────────────────────────────────────────
 function UsageCard({ usage }) {
   if (!usage) return null;
@@ -161,13 +160,16 @@ export default function Dashboard() {
   const [encLoading, setEncLoading] = useState(false);
   const [decLoading, setDecLoading] = useState(false);
   const [copied, setCopied]         = useState(null);
-  const [usage, setUsage]           = useState(null);
+  const [usage, setUsage]               = useState(null);
   const [usageLoading, setUsageLoading] = useState(true);
+  const [activity, setActivity]         = useState(null);
+  const [activityLoading, setActivityLoading] = useState(false);
 
   useEffect(() => {
     setUser(getUser());
     setMounted(true);
     fetchUsage();
+    fetchActivity();
   }, []);
 
   const fetchUsage = async () => {
@@ -180,6 +182,18 @@ export default function Dashboard() {
       if (data?.data) setUsage(data.data);
     } catch (e) { console.error(e); }
     setUsageLoading(false);
+  };
+
+  const fetchActivity = async () => {
+    setActivityLoading(true);
+    try {
+      const res  = await fetch(`${API}/api/v1/shield/activity`, {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      const data = await res.json();
+      if (data?.data) setActivity(data.data);
+    } catch (e) { console.error(e); }
+    setActivityLoading(false);
   };
 
   if (!mounted) return null;
@@ -198,6 +212,7 @@ export default function Dashboard() {
       if (key) {
         setKeys(prev => [...prev, { id: Date.now(), label: `Key ${prev.length + 1}`, status: 'Active', created: 'Today', value: key, code }]);
         await fetchUsage();
+        await fetchActivity();
       }
     } catch (e) { console.error(e); }
     setGenLoading(false);
@@ -215,6 +230,7 @@ export default function Dashboard() {
       const data = await res.json();
       setEncResult(data?.data?.encrypted || data?.encrypted || 'Encryption failed');
       await fetchUsage();
+      await fetchActivity();
     } catch { setEncResult('Error — check connection'); }
     setEncLoading(false);
   };
@@ -231,6 +247,7 @@ export default function Dashboard() {
       const data = await res.json();
       setDecResult(data?.data?.plaintext || data?.plaintext || 'Decryption failed');
       await fetchUsage();
+      await fetchActivity();
     } catch { setDecResult('Error — check connection'); }
     setDecLoading(false);
   };
@@ -526,10 +543,78 @@ export default function Dashboard() {
 
             {/* ACTIVITY */}
             {activeNav==='activity' && (
-              <div className="fadeUp" style={{background:C.cardBg,border:`1px solid ${C.cardBorder}`,borderRadius:14,padding:'60px 40px',textAlign:'center',boxShadow:C.cardShadow}}>
-                <div style={{fontSize:40,marginBottom:14}}>↗</div>
-                <div style={{fontSize:15,fontWeight:600,color:C.bodyTxt,marginBottom:6}}>No activity yet</div>
-                <div style={{fontSize:13,color:C.mutedTxt}}>Start encrypting or generating keys to see activity here.</div>
+              <div className="fadeUp">
+                {/* Stats row */}
+                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:16}}>
+                  {[
+                    {label:'Total Calls',  value: activity?.totalCalls ?? 0,  icon:'⚡', bg:'#fff3e0', bdr:'#ffe0b2'},
+                    {label:'Today',        value: activity?.todayCalls ?? 0,  icon:'📅', bg:'#eef9f0', bdr:'#b8f0c8'},
+                    {label:'This Month',   value: usage?.callsUsed ?? 0,      icon:'📊', bg:'#eef4ff', bdr:'#c2d8f8'},
+                  ].map((s,i)=>(
+                    <div key={i} style={{background:s.bg,border:`1px solid ${s.bdr}`,borderRadius:14,padding:'20px 22px',boxShadow:C.cardShadow}}>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+                        <div style={{fontSize:11,fontWeight:700,color:C.bodyTxt,textTransform:'uppercase',letterSpacing:'.06em'}}>{s.label}</div>
+                        <div style={{width:36,height:36,background:'rgba(255,255,255,.7)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>{s.icon}</div>
+                      </div>
+                      <div style={{fontSize:38,fontWeight:800,color:C.titleTxt,letterSpacing:-2,lineHeight:1}}>{s.value.toLocaleString()}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Activity log */}
+                <div style={{background:C.cardBg,border:`1px solid ${C.cardBorder}`,borderRadius:14,padding:22,boxShadow:C.cardShadow}}>
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
+                    <div style={{fontSize:14,fontWeight:700,color:C.titleTxt}}>API Call History</div>
+                    <button onClick={fetchActivity} style={{background:'#f0eeff',border:'1px solid #d6ceff',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:600,color:'#6c5ce7',cursor:'pointer'}}>↻ Refresh</button>
+                  </div>
+
+                  {activityLoading ? (
+                    <div style={{textAlign:'center',padding:'40px 0',color:C.mutedTxt,fontSize:13}}>Loading activity…</div>
+                  ) : !activity || activity.entries.length === 0 ? (
+                    <div style={{textAlign:'center',padding:'40px 0'}}>
+                      <div style={{fontSize:36,marginBottom:12}}>↗</div>
+                      <div style={{fontSize:14,fontWeight:600,color:C.bodyTxt,marginBottom:6}}>No activity yet</div>
+                      <div style={{fontSize:13,color:C.mutedTxt}}>Start encrypting or generating keys to see activity here.</div>
+                    </div>
+                  ) : (
+                    <div>
+                      {activity.entries.map((entry, i) => (
+                        <div key={entry.id} style={{
+                          display:'flex',alignItems:'center',gap:14,padding:'13px 0',
+                          borderBottom: i < activity.entries.length-1 ? `1px solid ${C.cardBorder}` : 'none'
+                        }}>
+                          {/* Icon */}
+                          <div style={{
+                            width:38,height:38,borderRadius:10,flexShrink:0,
+                            background: entry.action==='ENCRYPT' ? '#f0eeff' : entry.action==='DECRYPT' ? '#eef9f0' : '#fff3e0',
+                            border: `1px solid ${entry.action==='ENCRYPT' ? '#d6ceff' : entry.action==='DECRYPT' ? '#b8f0c8' : '#ffe0b2'}`,
+                            display:'flex',alignItems:'center',justifyContent:'center',fontSize:17
+                          }}>{entry.icon}</div>
+
+                          {/* Info */}
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:13.5,fontWeight:600,color:C.titleTxt}}>{entry.label}</div>
+                            {entry.details && <div style={{fontSize:11.5,color:C.mutedTxt,marginTop:2,fontFamily:'DM Mono,monospace'}}>{entry.details}</div>}
+                          </div>
+
+                          {/* Status badge */}
+                          <span style={{
+                            fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:100,flexShrink:0,
+                            background: entry.status==='SUCCESS' ? C.greenBg : C.redBg,
+                            color: entry.status==='SUCCESS' ? C.green : C.red,
+                            border: `1px solid ${entry.status==='SUCCESS' ? C.greenBdr : C.redBdr}`
+                          }}>{entry.status}</span>
+
+                          {/* Time */}
+                          <div style={{fontSize:11.5,color:C.mutedTxt,flexShrink:0,textAlign:'right',minWidth:80}}>
+                            {new Date(entry.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
+                            <div style={{fontSize:10,marginTop:1}}>{new Date(entry.createdAt).toLocaleDateString()}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
