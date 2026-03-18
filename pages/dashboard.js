@@ -13,6 +13,7 @@ function getUser() {
   try { return JSON.parse(localStorage.getItem('sra_user') || 'null'); } catch { return null; }
 }
 
+
 // ── USAGE CARD ───────────────────────────────────────────────────────────────
 function UsageCard({ usage }) {
   if (!usage) return null;
