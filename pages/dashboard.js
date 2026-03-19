@@ -35,7 +35,6 @@ function UsageCard({ usage }) {
 
   return (
     <div style={{background:'#fff8ec',border:'1px solid #ffe0b2',borderRadius:14,padding:22,boxShadow:'0 1px 6px rgba(255,159,67,.1)',marginBottom:16}}>
-      {/* Warning banner */}
       {usage.warningLevel === 'exceeded' && (
         <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:10,padding:'10px 14px',marginBottom:16,display:'flex',alignItems:'center',gap:10}}>
           <span style={{fontSize:18}}>🚨</span>
@@ -67,7 +66,6 @@ function UsageCard({ usage }) {
         </div>
       )}
 
-      {/* Header */}
       <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:18,flexWrap:'wrap',gap:10}}>
         <div>
           <div style={{fontSize:14,fontWeight:700,color:'#1a2035'}}>Monthly Usage</div>
@@ -80,7 +78,6 @@ function UsageCard({ usage }) {
         </div>
       </div>
 
-      {/* Progress bar */}
       <div style={{marginBottom:18}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:8}}>
           <div style={{fontSize:28,fontWeight:800,color:'#1a2035',letterSpacing:-1,lineHeight:1}}>
@@ -94,13 +91,7 @@ function UsageCard({ usage }) {
           </div>
         </div>
         <div style={{height:10,background:'#f1f5f9',borderRadius:100,overflow:'hidden'}}>
-          <div style={{
-            height:'100%',borderRadius:100,
-            width:`${isUnlimited ? 0 : pct}%`,
-            background:barColor,
-            transition:'width .6s ease',
-            minWidth: usage.callsUsed > 0 ? 6 : 0
-          }}/>
+          <div style={{height:'100%',borderRadius:100,width:`${isUnlimited ? 0 : pct}%`,background:barColor,transition:'width .6s ease',minWidth: usage.callsUsed > 0 ? 6 : 0}}/>
         </div>
         <div style={{display:'flex',justifyContent:'space-between',marginTop:6}}>
           <div style={{fontSize:11,color:'#a0aec0'}}>0</div>
@@ -111,7 +102,6 @@ function UsageCard({ usage }) {
         </div>
       </div>
 
-      {/* Stats row */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:18}}>
         {[
           {label:'Today',      value: usage.todayCalls},
@@ -125,21 +115,518 @@ function UsageCard({ usage }) {
         ))}
       </div>
 
-      {/* 7-day chart */}
       <div>
         <div style={{fontSize:12,fontWeight:600,color:'#4a5568',marginBottom:10}}>Last 7 Days</div>
         <div style={{display:'flex',alignItems:'flex-end',gap:6,height:60}}>
           {usage.dailyHistory.map((v,i) => (
             <div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
-              <div style={{
-                width:'100%',borderRadius:'4px 4px 0 0',
-                height: v === 0 ? 3 : `${Math.max(8,(v/maxH)*50)}px`,
-                background: i === 6 ? '#ff9f43' : '#ffe0b2',
-                transition:'height .3s ease'
-              }}/>
+              <div style={{width:'100%',borderRadius:'4px 4px 0 0',height: v === 0 ? 3 : `${Math.max(8,(v/maxH)*50)}px`,background: i === 6 ? '#ff9f43' : '#ffe0b2',transition:'height .3s ease'}}/>
               <div style={{fontSize:9,color:'#a0aec0',fontWeight:500}}>{days[i]}</div>
             </div>
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── DOCS PANEL ────────────────────────────────────────────────────────────────
+function DocsPanel({ C }) {
+  const [activeEndpoint, setActiveEndpoint] = useState('generate');
+  const [activeLang, setActiveLang] = useState('js');
+
+  const BASE = 'https://sra-backend-production.up.railway.app/api/v1';
+
+  const endpoints = [
+    { id: 'generate', label: 'Generate Key', method: 'POST', path: '/shield/keys/generate', color: '#6c5ce7', bg: '#f0eeff', bdr: '#d6ceff' },
+    { id: 'encrypt',  label: 'Encrypt',      method: 'POST', path: '/shield/encrypt',       color: '#0984e3', bg: '#eef4ff', bdr: '#c2d8f8' },
+    { id: 'decrypt',  label: 'Decrypt',      method: 'POST', path: '/shield/decrypt',       color: '#28c76f', bg: '#eef9f0', bdr: '#b8f0c8' },
+    { id: 'audit',    label: 'Audit Log',    method: 'GET',  path: '/shield/keys/audit',    color: '#ff9f43', bg: '#fff3e0', bdr: '#ffe0b2' },
+    { id: 'rotate',   label: 'Rotate Key',   method: 'POST', path: '/shield/keys/rotate',   color: '#fd79a8', bg: '#fff0f6', bdr: '#ffd6e7' },
+    { id: 'verify',   label: 'Verify Proof', method: 'GET',  path: '/shield/verify/{code}', color: '#00cec9', bg: '#e8fffe', bdr: '#b2f0ee' },
+  ];
+
+  const endpointDetails = {
+    generate: {
+      description: 'Generate a new 256-bit encryption key from the multi-source entropy engine (Bitcoin + Ethereum + Seismic + Server Timing). No body required.',
+      request: null,
+      response: `{\n  "success": true,\n  "data": {\n    "encryptionKey": "a053b13dfa84f7164da57602c9586b32...",\n    "verificationCode": "SRA-K-KQ4T47M6",\n    "verifyUrl": "https://sra.com/shield/verify/SRA-K-KQ4T47M6"\n  }\n}`,
+      warning: '⚠️  SRA Shield does NOT store your encryption key. Save it immediately — if lost, encrypted data is unrecoverable.',
+    },
+    encrypt: {
+      description: 'Encrypt any plaintext string. The encryption uses AES-128 (Fernet) with HMAC-SHA256 integrity verification.',
+      request: `{\n  "plaintext": "Patient: John Doe, DOB: 1985-03-12, Diagnosis: Hypertension"\n}`,
+      response: `{\n  "success": true,\n  "data": {\n    "encrypted": "SRA_ENC_gAAAAABpqILQevj_k3Lj4-mt_2mY8..."\n  }\n}`,
+      warning: null,
+    },
+    decrypt: {
+      description: 'Decrypt an encrypted SRA Shield string back to its original plaintext. Uses the same key that was active when encryption occurred.',
+      request: `{\n  "encrypted": "SRA_ENC_gAAAAABpqILQevj_k3Lj4-mt_2mY8..."\n}`,
+      response: `{\n  "success": true,\n  "data": {\n    "plaintext": "Patient: John Doe, DOB: 1985-03-12, Diagnosis: Hypertension"\n  }\n}`,
+      warning: null,
+    },
+    audit: {
+      description: 'Retrieve the full audit log of all key generation events for your account. Useful for compliance documentation.',
+      request: null,
+      response: `{\n  "success": true,\n  "data": [\n    {\n      "id": 1,\n      "verificationCode": "SRA-K-KQ4T47M6",\n      "tier": "fast",\n      "createdAt": "2026-03-04T10:22:31"\n    }\n  ]\n}`,
+      warning: null,
+    },
+    rotate: {
+      description: 'Rotate your encryption key. Generates a new key from fresh entropy. Your old key is invalidated — re-encrypt any data that used the old key.',
+      request: null,
+      response: `{\n  "success": true,\n  "data": {\n    "encryptionKey": "c628b9c9de447e01b8684358a7d3bbc4...",\n    "verificationCode": "SRA-K-D4X9DU5X"\n  }\n}`,
+      warning: '⚠️  After rotation, data encrypted with the old key can only be decrypted using the old key. Store both keys if needed.',
+    },
+    verify: {
+      description: 'Public endpoint — no auth required. Returns the full entropy proof for any verification code. Share this URL with regulators or auditors.',
+      request: null,
+      response: `{\n  "success": true,\n  "data": {\n    "verificationCode": "SRA-K-KQ4T47M6",\n    "btcPrice": "BTCUSDT-65618.00",\n    "ethBlockHash": "0x1761f79",\n    "seismicData": "M2.1 near Ridgecrest CA",\n    "serverTiming": "5298513042300",\n    "createdAt": "2026-03-04T10:22:31"\n  }\n}`,
+      warning: null,
+    },
+  };
+
+  const codeExamples = {
+    js: `// SRA Shield — JavaScript Quick Start
+const BASE = '${BASE}';
+
+// 1. Login
+const login = await fetch(\`\${BASE}/auth/login\`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email: 'you@company.com', password: 'YourPass123!' })
+});
+const { data: { token } } = await login.json();
+const headers = { Authorization: \`Bearer \${token}\`, 'Content-Type': 'application/json' };
+
+// 2. Generate key  ⚠️ Save this!
+const keyRes = await fetch(\`\${BASE}/shield/keys/generate\`, { method: 'POST', headers });
+const { data: { encryptionKey } } = await keyRes.json();
+
+// 3. Encrypt
+const encRes = await fetch(\`\${BASE}/shield/encrypt\`, {
+  method: 'POST', headers,
+  body: JSON.stringify({ plaintext: 'Sensitive data here' })
+});
+const { data: { encrypted } } = await encRes.json();
+
+// 4. Decrypt
+const decRes = await fetch(\`\${BASE}/shield/decrypt\`, {
+  method: 'POST', headers,
+  body: JSON.stringify({ encrypted })
+});
+const { data: { plaintext } } = await decRes.json();
+console.log('Decrypted:', plaintext);`,
+
+    python: `# SRA Shield — Python Quick Start
+import requests
+
+BASE = '${BASE}'
+
+# 1. Login
+r = requests.post(f'{BASE}/auth/login',
+    json={'email': 'you@company.com', 'password': 'YourPass123!'})
+token = r.json()['data']['token']
+headers = {'Authorization': f'Bearer {token}'}
+
+# 2. Generate key  ⚠️ Save this!
+key_res = requests.post(f'{BASE}/shield/keys/generate', headers=headers)
+encryption_key = key_res.json()['data']['encryptionKey']
+print(f'Key: {encryption_key}')
+
+# 3. Encrypt
+enc = requests.post(f'{BASE}/shield/encrypt', headers=headers,
+    json={'plaintext': 'Sensitive data here'})
+encrypted = enc.json()['data']['encrypted']
+
+# 4. Decrypt
+dec = requests.post(f'{BASE}/shield/decrypt', headers=headers,
+    json={'encrypted': encrypted})
+print(dec.json()['data']['plaintext'])`,
+
+    php: `<?php
+// SRA Shield — PHP Quick Start
+$BASE = '${BASE}';
+
+function sraPost($url, $data = null, $token = null) {
+    $ch = curl_init($url);
+    $headers = ['Content-Type: application/json'];
+    if ($token) $headers[] = "Authorization: Bearer $token";
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $data ? json_encode($data) : '{}',
+        CURLOPT_HTTPHEADER => $headers,
+    ]);
+    return json_decode(curl_exec($ch), true);
+}
+
+// 1. Login
+$login = sraPost("$BASE/auth/login",
+    ['email' => 'you@company.com', 'password' => 'YourPass123!']);
+$token = $login['data']['token'];
+
+// 2. Generate key  ⚠️ Save this!
+$keyRes = sraPost("$BASE/shield/keys/generate", null, $token);
+$key = $keyRes['data']['encryptionKey'];
+
+// 3. Encrypt
+$enc = sraPost("$BASE/shield/encrypt",
+    ['plaintext' => 'Sensitive data'], $token);
+$encrypted = $enc['data']['encrypted'];
+
+// 4. Decrypt
+$dec = sraPost("$BASE/shield/decrypt",
+    ['encrypted' => $encrypted], $token);
+echo $dec['data']['plaintext'];`,
+
+    java: `// SRA Shield — Java Quick Start (OkHttp)
+import okhttp3.*;
+import org.json.JSONObject;
+
+OkHttpClient client = new OkHttpClient();
+String BASE = "${BASE}";
+MediaType JSON = MediaType.get("application/json");
+
+// 1. Login
+String loginBody = new JSONObject()
+    .put("email", "you@company.com")
+    .put("password", "YourPass123!").toString();
+Request loginReq = new Request.Builder()
+    .url(BASE + "/auth/login")
+    .post(RequestBody.create(loginBody, JSON)).build();
+JSONObject loginRes = new JSONObject(client.newCall(loginReq)
+    .execute().body().string());
+String token = loginRes.getJSONObject("data").getString("token");
+
+// 2. Generate key  ⚠️ Save this!
+Request keyReq = new Request.Builder()
+    .url(BASE + "/shield/keys/generate")
+    .addHeader("Authorization", "Bearer " + token)
+    .post(RequestBody.create("{}", JSON)).build();
+JSONObject keyRes = new JSONObject(client.newCall(keyReq)
+    .execute().body().string());
+String key = keyRes.getJSONObject("data").getString("encryptionKey");
+
+// 3. Encrypt
+String encBody = new JSONObject()
+    .put("plaintext", "Sensitive data").toString();
+Request encReq = new Request.Builder()
+    .url(BASE + "/shield/encrypt")
+    .addHeader("Authorization", "Bearer " + token)
+    .post(RequestBody.create(encBody, JSON)).build();
+JSONObject encRes = new JSONObject(client.newCall(encReq)
+    .execute().body().string());
+System.out.println(encRes.getJSONObject("data").getString("encrypted"));`,
+  };
+
+  const active = endpointDetails[activeEndpoint];
+  const activeEp = endpoints.find(e => e.id === activeEndpoint);
+
+  return (
+    <div className="fadeUp">
+      {/* Header */}
+      <div style={{background:'#fff',border:'1px solid #e8edf5',borderRadius:14,padding:'22px 26px',marginBottom:16,boxShadow:'0 1px 4px rgba(0,0,0,.04)'}}>
+        <div style={{display:'flex',alignItems:'center',gap:14}}>
+          <div style={{width:44,height:44,background:'linear-gradient(135deg,#6c5ce7,#4338ca)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,boxShadow:'0 4px 12px rgba(108,92,231,.3)'}}>📚</div>
+          <div>
+            <div style={{fontSize:20,fontWeight:800,color:'#1a2035',letterSpacing:'-0.5px'}}>API Documentation</div>
+            <div style={{fontSize:13,color:'#a0aec0',marginTop:2}}>Base URL: <span style={{fontFamily:'DM Mono,monospace',color:'#6c5ce7',fontSize:12}}>{BASE}</span></div>
+          </div>
+          <div style={{marginLeft:'auto',background:'#eef9f0',border:'1px solid #b8f0c8',borderRadius:100,padding:'6px 14px',fontSize:12,fontWeight:700,color:'#28c76f'}}>
+            ● API Online
+          </div>
+        </div>
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'220px 1fr',gap:16}}>
+        {/* Endpoint list */}
+        <div style={{background:'#fff',border:'1px solid #e8edf5',borderRadius:14,padding:14,boxShadow:'0 1px 4px rgba(0,0,0,.04)',height:'fit-content'}}>
+          <div style={{fontSize:10,fontWeight:700,color:'#a0aec0',letterSpacing:'.1em',marginBottom:10,paddingLeft:4}}>ENDPOINTS</div>
+          {endpoints.map(ep => (
+            <button key={ep.id} onClick={() => setActiveEndpoint(ep.id)} style={{
+              display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 10px',
+              borderRadius:9,border:'none',cursor:'pointer',marginBottom:3,textAlign:'left',
+              background: activeEndpoint === ep.id ? ep.bg : 'transparent',
+              transition:'all .15s',
+            }}>
+              <span style={{
+                fontSize:9,fontWeight:800,padding:'2px 6px',borderRadius:5,flexShrink:0,
+                background: ep.method === 'GET' ? '#eef9f0' : '#f0eeff',
+                color: ep.method === 'GET' ? '#28c76f' : '#6c5ce7',
+                border: `1px solid ${ep.method === 'GET' ? '#b8f0c8' : '#d6ceff'}`,
+              }}>{ep.method}</span>
+              <span style={{fontSize:13,fontWeight: activeEndpoint === ep.id ? 600 : 400,color: activeEndpoint === ep.id ? ep.color : '#4a5568'}}>{ep.label}</span>
+            </button>
+          ))}
+
+          {/* Auth note */}
+          <div style={{marginTop:14,padding:'12px 10px',background:'#fff3e0',border:'1px solid #ffe0b2',borderRadius:10,fontSize:11,color:'#92400e',lineHeight:1.6}}>
+            🔐 <strong>Auth required</strong> on all <code style={{fontFamily:'DM Mono,monospace'}}>/shield/*</code> endpoints.<br/>
+            Add header:<br/>
+            <code style={{fontFamily:'DM Mono,monospace',fontSize:10}}>Authorization: Bearer TOKEN</code>
+          </div>
+        </div>
+
+        {/* Endpoint detail */}
+        <div style={{display:'flex',flexDirection:'column',gap:14}}>
+          {/* Endpoint header */}
+          <div style={{background:'#fff',border:'1px solid #e8edf5',borderRadius:14,padding:'18px 22px',boxShadow:'0 1px 4px rgba(0,0,0,.04)'}}>
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+              <span style={{
+                fontSize:11,fontWeight:800,padding:'4px 10px',borderRadius:7,
+                background: activeEp?.method === 'GET' ? '#eef9f0' : '#f0eeff',
+                color: activeEp?.method === 'GET' ? '#28c76f' : '#6c5ce7',
+                border: `1px solid ${activeEp?.method === 'GET' ? '#b8f0c8' : '#d6ceff'}`,
+              }}>{activeEp?.method}</span>
+              <code style={{fontFamily:'DM Mono,monospace',fontSize:13,color:'#1a2035',fontWeight:600}}>{activeEp?.path}</code>
+            </div>
+            <p style={{fontSize:13.5,color:'#4a5568',lineHeight:1.7,margin:0}}>{active?.description}</p>
+            {active?.warning && (
+              <div style={{marginTop:12,background:'#fff7ed',border:'1px solid #fed7aa',borderRadius:9,padding:'10px 14px',fontSize:12.5,color:'#9a3412',lineHeight:1.6}}>{active.warning}</div>
+            )}
+          </div>
+
+          {/* Request body */}
+          {active?.request && (
+            <div style={{background:'#fff',border:'1px solid #e8edf5',borderRadius:14,padding:'18px 22px',boxShadow:'0 1px 4px rgba(0,0,0,.04)'}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#a0aec0',letterSpacing:'.08em',marginBottom:10}}>REQUEST BODY</div>
+              <div style={{background:'#1a2035',borderRadius:10,padding:'14px 16px'}}>
+                <pre style={{margin:0,fontFamily:'DM Mono,monospace',fontSize:12,color:'rgba(255,255,255,.85)',lineHeight:1.8,whiteSpace:'pre-wrap'}}>{active.request}</pre>
+              </div>
+            </div>
+          )}
+
+          {/* Response */}
+          <div style={{background:'#fff',border:'1px solid #e8edf5',borderRadius:14,padding:'18px 22px',boxShadow:'0 1px 4px rgba(0,0,0,.04)'}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#a0aec0',letterSpacing:'.08em'}}>RESPONSE</div>
+              <span style={{background:'#eef9f0',border:'1px solid #b8f0c8',borderRadius:6,padding:'2px 10px',fontSize:11,fontWeight:700,color:'#28c76f'}}>200 OK</span>
+            </div>
+            <div style={{background:'#1a2035',borderRadius:10,padding:'14px 16px'}}>
+              <pre style={{margin:0,fontFamily:'DM Mono,monospace',fontSize:12,color:'rgba(255,255,255,.85)',lineHeight:1.8,whiteSpace:'pre-wrap'}}>{active?.response}</pre>
+            </div>
+          </div>
+
+          {/* Code examples */}
+          <div style={{background:'#fff',border:'1px solid #e8edf5',borderRadius:14,padding:'18px 22px',boxShadow:'0 1px 4px rgba(0,0,0,.04)'}}>
+            <div style={{fontSize:11,fontWeight:700,color:'#a0aec0',letterSpacing:'.08em',marginBottom:12}}>CODE EXAMPLES — FULL FLOW</div>
+            <div style={{display:'flex',gap:6,marginBottom:0}}>
+              {[['js','JavaScript'],['python','Python'],['php','PHP'],['java','Java']].map(([id,label]) => (
+                <button key={id} onClick={() => setActiveLang(id)} style={{
+                  padding:'7px 16px',borderRadius:'8px 8px 0 0',fontSize:12.5,fontWeight:600,cursor:'pointer',
+                  border:'1.5px solid',borderBottom:'none',transition:'all .15s',
+                  background: activeLang === id ? '#1a2035' : '#f8f9fb',
+                  color: activeLang === id ? 'rgba(255,255,255,.9)' : '#a0aec0',
+                  borderColor: activeLang === id ? '#1a2035' : '#e8edf5',
+                }}>{label}</button>
+              ))}
+            </div>
+            <div style={{background:'#1a2035',borderRadius:'0 10px 10px 10px',padding:'16px 18px'}}>
+              <pre style={{margin:0,fontFamily:'DM Mono,monospace',fontSize:12,color:'rgba(255,255,255,.85)',lineHeight:1.9,whiteSpace:'pre-wrap',overflowX:'auto'}}>{codeExamples[activeLang]}</pre>
+            </div>
+          </div>
+
+          {/* Error codes */}
+          <div style={{background:'#fff',border:'1px solid #e8edf5',borderRadius:14,padding:'18px 22px',boxShadow:'0 1px 4px rgba(0,0,0,.04)'}}>
+            <div style={{fontSize:11,fontWeight:700,color:'#a0aec0',letterSpacing:'.08em',marginBottom:12}}>ERROR CODES</div>
+            <div style={{display:'grid',gridTemplateColumns:'80px 120px 1fr',gap:0}}>
+              {[
+                ['401','Unauthorized','Missing or invalid Bearer token'],
+                ['400','Bad Request', 'Missing required field (e.g. plaintext)'],
+                ['429','Rate Limited','Too many failed login attempts (5 max)'],
+                ['404','Not Found',   'Verification code does not exist'],
+                ['500','Server Error','Internal error — check Railway logs'],
+              ].map(([code, name, desc], i) => (
+                <div key={code} style={{
+                  display:'contents',
+                }}>
+                  <div style={{padding:'10px 0',borderBottom:'1px solid #f1f5f9',fontFamily:'DM Mono,monospace',fontSize:12,fontWeight:700,color: code.startsWith('4') ? '#ea5455' : '#ff9f43'}}>{code}</div>
+                  <div style={{padding:'10px 0',borderBottom:'1px solid #f1f5f9',fontSize:12.5,fontWeight:600,color:'#1a2035'}}>{name}</div>
+                  <div style={{padding:'10px 0',borderBottom:'1px solid #f1f5f9',fontSize:12.5,color:'#a0aec0'}}>{desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── UPGRADE PANEL ─────────────────────────────────────────────────────────────
+function UpgradePanel({ C, userPlan }) {
+  const plans = [
+    {
+      id: 'starter',
+      name: 'Starter',
+      price: '$299',
+      period: '/month',
+      tag: null,
+      color: '#6c5ce7',
+      bg: '#f0eeff',
+      bdr: '#d6ceff',
+      btnBg: '#6c5ce7',
+      features: [
+        '10,000 API calls / month',
+        '3 entropy sources (BTC + ETH + Seismic)',
+        'Basic audit log',
+        'Public verification URLs',
+        'Email support',
+        '1 API key',
+      ],
+      notIncluded: ['Auto key rotation', 'Compliance reports', 'Dedicated entropy pool'],
+    },
+    {
+      id: 'professional',
+      name: 'Professional',
+      price: '$999',
+      period: '/month',
+      tag: 'Most Popular',
+      color: '#0984e3',
+      bg: '#eef4ff',
+      bdr: '#c2d8f8',
+      btnBg: '#0984e3',
+      features: [
+        'Unlimited API calls',
+        'All 4 entropy sources',
+        'Full compliance reports',
+        'Auto key rotation (24h)',
+        'Priority support',
+        '5 API keys',
+        'DPDP Act 2023 documentation',
+        'Usage analytics dashboard',
+      ],
+      notIncluded: ['Dedicated entropy pool', 'Custom entropy sources'],
+    },
+    {
+      id: 'enterprise',
+      name: 'Enterprise',
+      price: '$2,999',
+      period: '/month',
+      tag: 'Maximum Security',
+      color: '#ff9f43',
+      bg: '#fff3e0',
+      bdr: '#ffe0b2',
+      btnBg: '#ff9f43',
+      features: [
+        'Unlimited API calls',
+        'Dedicated entropy pool',
+        'Custom entropy sources',
+        'SLA guarantee (99.9%)',
+        'Legal compliance docs',
+        'Unlimited API keys',
+        'Custom key rotation schedule',
+        '24/7 dedicated support',
+        'On-premise deployment option',
+      ],
+      notIncluded: [],
+    },
+  ];
+
+  const currentPlan = (userPlan || 'free').toLowerCase();
+
+  return (
+    <div className="fadeUp">
+      {/* Header */}
+      <div style={{textAlign:'center',marginBottom:32}}>
+        <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'#f0eeff',border:'1px solid #d6ceff',borderRadius:100,padding:'6px 16px',fontSize:12,fontWeight:700,color:'#6c5ce7',marginBottom:14}}>
+          ⚡ Upgrade Your Plan
+        </div>
+        <div style={{fontSize:28,fontWeight:800,color:'#1a2035',letterSpacing:'-1px',marginBottom:8}}>
+          Choose the right protection level
+        </div>
+        <div style={{fontSize:14,color:'#a0aec0',maxWidth:480,margin:'0 auto',lineHeight:1.6}}>
+          All plans include provably fair entropy, public verification URLs, and full audit trails. <strong style={{color:'#1a2035'}}>Don't trust us — verify us.</strong>
+        </div>
+      </div>
+
+      {/* Plans grid */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:24}}>
+        {plans.map(plan => {
+          const isCurrent = currentPlan === plan.id || (currentPlan === 'free' && plan.id === 'starter');
+          return (
+            <div key={plan.id} style={{
+              background:'#fff',
+              border: plan.tag === 'Most Popular' ? `2px solid ${plan.color}` : '1px solid #e8edf5',
+              borderRadius:16,padding:'24px 22px',
+              boxShadow: plan.tag === 'Most Popular' ? `0 8px 28px rgba(9,132,227,.12)` : '0 1px 6px rgba(0,0,0,.04)',
+              position:'relative',display:'flex',flexDirection:'column',
+              transform: plan.tag === 'Most Popular' ? 'translateY(-4px)' : 'none',
+              transition:'transform .2s',
+            }}>
+              {plan.tag && (
+                <div style={{position:'absolute',top:-13,left:'50%',transform:'translateX(-50%)',background:plan.btnBg,color:'#fff',fontSize:10,fontWeight:800,padding:'4px 14px',borderRadius:100,letterSpacing:'.06em',whiteSpace:'nowrap'}}>
+                  {plan.tag}
+                </div>
+              )}
+
+              {/* Plan header */}
+              <div style={{marginBottom:20}}>
+                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
+                  <div style={{width:38,height:38,background:plan.bg,border:`1px solid ${plan.bdr}`,borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>
+                    {plan.id === 'starter' ? '🚀' : plan.id === 'professional' ? '⚡' : '🏆'}
+                  </div>
+                  <div style={{fontSize:16,fontWeight:700,color:'#1a2035'}}>{plan.name}</div>
+                </div>
+                <div style={{display:'flex',alignItems:'baseline',gap:4,marginBottom:6}}>
+                  <span style={{fontSize:36,fontWeight:800,color:plan.color,letterSpacing:-1}}>{plan.price}</span>
+                  <span style={{fontSize:14,color:'#a0aec0'}}>{plan.period}</span>
+                </div>
+              </div>
+
+              {/* Features */}
+              <div style={{flex:1,marginBottom:22}}>
+                {plan.features.map((f, i) => (
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:9,marginBottom:9,fontSize:13,color:'#4a5568'}}>
+                    <span style={{color:'#28c76f',fontSize:14,flexShrink:0}}>✓</span>{f}
+                  </div>
+                ))}
+                {plan.notIncluded.map((f, i) => (
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:9,marginBottom:9,fontSize:13,color:'#c9d0db'}}>
+                    <span style={{color:'#e2e8f0',fontSize:14,flexShrink:0}}>✗</span>{f}
+                  </div>
+                ))}
+              </div>
+
+              {/* CTA */}
+              <button
+                onClick={() => alert(`To upgrade to ${plan.name}, contact us at hello@sra.io or Stripe integration coming soon.`)}
+                style={{
+                  width:'100%',padding:'12px 0',borderRadius:10,fontSize:13.5,fontWeight:700,cursor:'pointer',
+                  background: isCurrent ? '#f1f5f9' : plan.btnBg,
+                  color: isCurrent ? '#a0aec0' : '#fff',
+                  border: isCurrent ? '1px solid #e2e8f0' : 'none',
+                  boxShadow: !isCurrent ? `0 4px 14px rgba(0,0,0,.15)` : 'none',
+                  transition:'all .15s',
+                }}>
+                {isCurrent ? '✓ Current Plan' : `Upgrade to ${plan.name} →`}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* FAQ / Info strip */}
+      <div style={{background:'#fff',border:'1px solid #e8edf5',borderRadius:14,padding:'22px 26px',boxShadow:'0 1px 4px rgba(0,0,0,.04)'}}>
+        <div style={{fontSize:14,fontWeight:700,color:'#1a2035',marginBottom:18}}>Common Questions</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:18}}>
+          {[
+            ['What happens if I exceed my limit?', 'On Starter, API calls are blocked at 100%. Professional and Enterprise have unlimited calls — no interruptions.'],
+            ['Can I cancel anytime?', 'Yes. Cancel before your next billing date and you keep access until the period ends.'],
+            ['Is there a free trial?', 'New accounts start on Free tier with limited calls so you can test before committing.'],
+            ['How does billing work?', 'Monthly recurring via Stripe. Invoice sent automatically. Upgrade or downgrade anytime.'],
+          ].map(([q, a], i) => (
+            <div key={i}>
+              <div style={{fontSize:13,fontWeight:600,color:'#1a2035',marginBottom:5}}>{q}</div>
+              <div style={{fontSize:12.5,color:'#a0aec0',lineHeight:1.6}}>{a}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{marginTop:18,paddingTop:18,borderTop:'1px solid #f1f5f9',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <div style={{fontSize:13,color:'#4a5568'}}>Need Enterprise or a custom quote? <strong>Talk to us directly.</strong></div>
+          <button onClick={() => window.open('mailto:hello@sra.io')} style={{background:'linear-gradient(135deg,#6c5ce7,#4338ca)',color:'#fff',border:'none',borderRadius:9,padding:'9px 20px',fontSize:13,fontWeight:600,cursor:'pointer',boxShadow:'0 4px 12px rgba(108,92,231,.3)'}}>
+            Contact Sales →
+          </button>
         </div>
       </div>
     </div>
@@ -264,12 +751,19 @@ export default function Dashboard() {
   const userEmail = user?.email || '';
   const userPlan  = user?.plan  || 'Starter';
 
+  // ── ALL NAV ITEMS (main + account) ──────────────────────────────────────────
   const navMain = [
     { id: 'overview', icon: '▦', label: 'Overview' },
     { id: 'keys',     icon: '⚿', label: 'My Keys' },
     { id: 'encrypt',  icon: '⊕', label: 'Encrypt / Decrypt' },
     { id: 'activity', icon: '↗', label: 'Activity' },
   ];
+  const navAccount = [
+    { id: 'docs',    icon: '☰', label: 'Documentation' },
+    { id: 'upgrade', icon: '↑', label: 'Upgrade Plan'  },
+  ];
+  // Combined for topbar title lookup
+  const allNav = [...navMain, ...navAccount];
 
   const C = {
     sidebarBg:'#1a2035', sidebarBorder:'#243050',
@@ -314,7 +808,7 @@ export default function Dashboard() {
 
       <div style={{display:'flex',height:'100vh',overflow:'hidden'}}>
 
-        {/* SIDEBAR */}
+        {/* ── SIDEBAR ─────────────────────────────────────────────────────── */}
         <aside style={{width:220,flexShrink:0,background:C.sidebarBg,borderRight:`1px solid ${C.sidebarBorder}`,display:'flex',flexDirection:'column',height:'100vh',overflow:'hidden'}}>
           <div style={{padding:'20px 16px 16px',borderBottom:`1px solid ${C.sidebarBorder}`,flexShrink:0}}>
             <div style={{display:'flex',alignItems:'center',gap:10}}>
@@ -325,7 +819,9 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+
           <div style={{flex:1,overflowY:'auto',padding:'14px 10px'}}>
+            {/* MAIN nav */}
             <div style={{fontSize:9.5,fontWeight:700,color:'#3d5080',letterSpacing:'.1em',padding:'0 6px',marginBottom:6}}>MAIN</div>
             {navMain.map(n => (
               <button key={n.id} className="nav-btn" onClick={() => setActiveNav(n.id)} style={{
@@ -337,13 +833,22 @@ export default function Dashboard() {
                 borderLeft: activeNav===n.id ? `3px solid ${C.navActiveTxt}` : '3px solid transparent',marginBottom:3,
               }}><span style={{fontSize:14}}>{n.icon}</span>{n.label}</button>
             ))}
+
+            {/* ACCOUNT nav — NOW WIRED UP ✅ */}
             <div style={{fontSize:9.5,fontWeight:700,color:'#3d5080',letterSpacing:'.1em',padding:'0 6px',margin:'18px 0 6px'}}>ACCOUNT</div>
-            {[{icon:'☰',label:'Documentation'},{icon:'↑',label:'Upgrade Plan'}].map(n=>(
-              <button key={n.label} className="nav-btn" style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 10px',borderRadius:9,border:'none',background:'transparent',color:C.navTxt,fontSize:13.5,borderLeft:'3px solid transparent',transition:'all .15s',textAlign:'left',marginBottom:3}}>
-                <span style={{fontSize:14}}>{n.icon}</span>{n.label}
-              </button>
+            {navAccount.map(n => (
+              <button key={n.id} className="nav-btn" onClick={() => setActiveNav(n.id)} style={{
+                display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 10px',borderRadius:9,border:'none',
+                background: activeNav===n.id ? C.navActive : 'transparent',
+                color: activeNav===n.id ? C.navActiveTxt : C.navTxt,
+                fontSize:13.5,fontWeight: activeNav===n.id ? 600 : 400,
+                transition:'all .15s',textAlign:'left',
+                borderLeft: activeNav===n.id ? `3px solid ${C.navActiveTxt}` : '3px solid transparent',marginBottom:3,
+              }}><span style={{fontSize:14}}>{n.icon}</span>{n.label}</button>
             ))}
           </div>
+
+          {/* User footer */}
           <div style={{padding:'12px 12px',borderTop:`1px solid ${C.sidebarBorder}`,display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
             <div style={{width:32,height:32,borderRadius:'50%',flexShrink:0,background:'linear-gradient(135deg,#6c5ce7,#0984e3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'#fff'}}>{userName[0].toUpperCase()}</div>
             <div style={{flex:1,minWidth:0}}>
@@ -354,36 +859,35 @@ export default function Dashboard() {
           </div>
         </aside>
 
-        {/* MAIN */}
+        {/* ── MAIN ────────────────────────────────────────────────────────── */}
         <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',minWidth:0}}>
           {/* Topbar */}
           <div style={{background:C.topBg,borderBottom:`1px solid ${C.topBorder}`,padding:'0 28px',height:60,display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0,boxShadow:'0 1px 4px rgba(0,0,0,.04)'}}>
             <div>
-              <div style={{fontSize:18,fontWeight:700,color:C.titleTxt,letterSpacing:'-.3px'}}>{navMain.find(n=>n.id===activeNav)?.label||'Overview'}</div>
+              {/* ✅ Fixed: uses allNav so docs/upgrade titles resolve */}
+              <div style={{fontSize:18,fontWeight:700,color:C.titleTxt,letterSpacing:'-.3px'}}>{allNav.find(n=>n.id===activeNav)?.label||'Overview'}</div>
               <div style={{fontSize:12,color:C.mutedTxt,marginTop:1}}>Welcome back, {userName}</div>
             </div>
             <div style={{display:'flex',alignItems:'center',gap:10}}>
               <div style={{display:'flex',alignItems:'center',gap:6,background:C.greenBg,border:`1px solid ${C.greenBdr}`,borderRadius:100,padding:'5px 13px',fontSize:12,fontWeight:600,color:C.green}}>
                 <div style={{width:6,height:6,borderRadius:'50%',background:C.green,animation:'glow 2s ease infinite'}}/>API Online
               </div>
-              <button style={{background:'linear-gradient(135deg,#6c5ce7,#4338ca)',color:'#fff',border:'none',borderRadius:9,padding:'8px 18px',fontSize:13,fontWeight:600,boxShadow:'0 4px 12px rgba(108,92,231,.3)'}}>Upgrade →</button>
+              <button onClick={() => setActiveNav('upgrade')} style={{background:'linear-gradient(135deg,#6c5ce7,#4338ca)',color:'#fff',border:'none',borderRadius:9,padding:'8px 18px',fontSize:13,fontWeight:600,boxShadow:'0 4px 12px rgba(108,92,231,.3)'}}>Upgrade →</button>
             </div>
           </div>
 
           {/* Content */}
           <div style={{flex:1,overflowY:'auto',padding:24,background:C.pageBg}}>
 
-            {/* OVERVIEW */}
+            {/* ── OVERVIEW ──────────────────────────────────────────────── */}
             {activeNav==='overview' && (
               <div className="fadeUp">
-                {/* Usage Card — real data */}
                 {usageLoading ? (
                   <div style={{background:C.cardBg,border:`1px solid ${C.cardBorder}`,borderRadius:14,padding:24,marginBottom:16,textAlign:'center',color:C.mutedTxt,fontSize:13}}>Loading usage data…</div>
                 ) : (
                   <UsageCard usage={usage} />
                 )}
 
-                {/* Stats */}
                 <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:16}}>
                   {[
                     {label:'Calls Used',     value: usage?.callsUsed ?? 0,       sub:'This month',         icon:'⚡', bg:'#fff3e0', bdr:'#ffe0b2'},
@@ -401,7 +905,6 @@ export default function Dashboard() {
                   ))}
                 </div>
 
-                {/* Chart + Quick Actions */}
                 <div style={{display:'grid',gridTemplateColumns:'1fr 260px',gap:16,marginBottom:16}}>
                   <div style={{background:C.cardBg,border:`1px solid ${C.cardBorder}`,borderRadius:14,padding:22,boxShadow:C.cardShadow}}>
                     <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:22}}>
@@ -435,11 +938,13 @@ export default function Dashboard() {
                       <button className="qa-btn" onClick={()=>setActiveNav('encrypt')} style={{display:'flex',alignItems:'center',gap:10,padding:'11px 13px',background:'#f8f9fb',border:`1px solid ${C.cardBorder}`,borderRadius:10,color:C.bodyTxt,fontSize:13,fontWeight:500,transition:'all .15s',textAlign:'left'}}>
                         <span>🔓</span>Decrypt Data
                       </button>
+                      <button className="qa-btn" onClick={()=>setActiveNav('docs')} style={{display:'flex',alignItems:'center',gap:10,padding:'11px 13px',background:'#f8f9fb',border:`1px solid ${C.cardBorder}`,borderRadius:10,color:C.bodyTxt,fontSize:13,fontWeight:500,transition:'all .15s',textAlign:'left'}}>
+                        <span>📚</span>View Docs
+                      </button>
                     </div>
                   </div>
                 </div>
 
-                {/* Active Keys */}
                 <div style={{background:C.cardBg,border:`1px solid ${C.cardBorder}`,borderRadius:14,padding:22,boxShadow:C.cardShadow}}>
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18}}>
                     <div style={{fontSize:14,fontWeight:700,color:C.titleTxt}}>Active Keys</div>
@@ -463,7 +968,7 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* MY KEYS */}
+            {/* ── MY KEYS ───────────────────────────────────────────────── */}
             {activeNav==='keys' && (
               <div className="fadeUp" style={{background:C.cardBg,border:`1px solid ${C.cardBorder}`,borderRadius:14,padding:22,boxShadow:C.cardShadow}}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18}}>
@@ -495,7 +1000,7 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* ENCRYPT / DECRYPT */}
+            {/* ── ENCRYPT / DECRYPT ─────────────────────────────────────── */}
             {activeNav==='encrypt' && (
               <div className="fadeUp" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
                 <div style={{background:C.cardBg,border:`1px solid ${C.cardBorder}`,borderRadius:14,padding:22,boxShadow:C.cardShadow}}>
@@ -541,10 +1046,9 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* ACTIVITY */}
+            {/* ── ACTIVITY ──────────────────────────────────────────────── */}
             {activeNav==='activity' && (
               <div className="fadeUp">
-                {/* Stats row */}
                 <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:16}}>
                   {[
                     {label:'Total Calls',  value: activity?.totalCalls ?? 0,  icon:'⚡', bg:'#fff3e0', bdr:'#ffe0b2'},
@@ -561,13 +1065,11 @@ export default function Dashboard() {
                   ))}
                 </div>
 
-                {/* Activity log */}
                 <div style={{background:C.cardBg,border:`1px solid ${C.cardBorder}`,borderRadius:14,padding:22,boxShadow:C.cardShadow}}>
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
                     <div style={{fontSize:14,fontWeight:700,color:C.titleTxt}}>API Call History</div>
                     <button onClick={fetchActivity} style={{background:'#f0eeff',border:'1px solid #d6ceff',borderRadius:8,padding:'6px 14px',fontSize:12,fontWeight:600,color:'#6c5ce7',cursor:'pointer'}}>↻ Refresh</button>
                   </div>
-
                   {activityLoading ? (
                     <div style={{textAlign:'center',padding:'40px 0',color:C.mutedTxt,fontSize:13}}>Loading activity…</div>
                   ) : !activity || activity.entries.length === 0 ? (
@@ -579,35 +1081,15 @@ export default function Dashboard() {
                   ) : (
                     <div>
                       {activity.entries.map((entry, i) => (
-                        <div key={entry.id} style={{
-                          display:'flex',alignItems:'center',gap:14,padding:'13px 0',
-                          borderBottom: i < activity.entries.length-1 ? `1px solid ${C.cardBorder}` : 'none'
-                        }}>
-                          {/* Icon */}
-                          <div style={{
-                            width:38,height:38,borderRadius:10,flexShrink:0,
-                            background: entry.action==='ENCRYPT' ? '#f0eeff' : entry.action==='DECRYPT' ? '#eef9f0' : '#fff3e0',
-                            border: `1px solid ${entry.action==='ENCRYPT' ? '#d6ceff' : entry.action==='DECRYPT' ? '#b8f0c8' : '#ffe0b2'}`,
-                            display:'flex',alignItems:'center',justifyContent:'center',fontSize:17
-                          }}>{entry.icon}</div>
-
-                          {/* Info */}
+                        <div key={entry.id} style={{display:'flex',alignItems:'center',gap:14,padding:'13px 0',borderBottom: i < activity.entries.length-1 ? `1px solid ${C.cardBorder}` : 'none'}}>
+                          <div style={{width:38,height:38,borderRadius:10,flexShrink:0,background: entry.action==='ENCRYPT' ? '#f0eeff' : entry.action==='DECRYPT' ? '#eef9f0' : '#fff3e0',border: `1px solid ${entry.action==='ENCRYPT' ? '#d6ceff' : entry.action==='DECRYPT' ? '#b8f0c8' : '#ffe0b2'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:17}}>{entry.icon}</div>
                           <div style={{flex:1,minWidth:0}}>
                             <div style={{fontSize:13.5,fontWeight:600,color:C.titleTxt}}>{entry.label}</div>
                             {entry.details && <div style={{fontSize:11.5,color:C.mutedTxt,marginTop:2,fontFamily:'DM Mono,monospace'}}>{entry.details}</div>}
                           </div>
-
-                          {/* Status badge */}
-                          <span style={{
-                            fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:100,flexShrink:0,
-                            background: entry.status==='SUCCESS' ? C.greenBg : C.redBg,
-                            color: entry.status==='SUCCESS' ? C.green : C.red,
-                            border: `1px solid ${entry.status==='SUCCESS' ? C.greenBdr : C.redBdr}`
-                          }}>{entry.status}</span>
-
-                          {/* Time */}
+                          <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:100,flexShrink:0,background: entry.status==='SUCCESS' ? C.greenBg : C.redBg,color: entry.status==='SUCCESS' ? C.green : C.red,border: `1px solid ${entry.status==='SUCCESS' ? C.greenBdr : C.redBdr}`}}>{entry.status}</span>
                           <div style={{fontSize:11.5,color:C.mutedTxt,flexShrink:0,textAlign:'right',minWidth:80}}>
-                            {new Date(entry.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
+                            {new Date(entry.createdAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
                             <div style={{fontSize:10,marginTop:1}}>{new Date(entry.createdAt).toLocaleDateString()}</div>
                           </div>
                         </div>
@@ -617,6 +1099,12 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
+
+            {/* ── DOCUMENTATION ─────────────────────────────────────────── */}
+            {activeNav==='docs' && <DocsPanel C={C} />}
+
+            {/* ── UPGRADE PLAN ──────────────────────────────────────────── */}
+            {activeNav==='upgrade' && <UpgradePanel C={C} userPlan={userPlan} />}
 
           </div>
         </div>
