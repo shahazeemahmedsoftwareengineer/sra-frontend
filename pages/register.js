@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://sra-backend-production.up.railway.app';
+
 export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -68,7 +70,7 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      const res = await fetch('https://sra-backend-production.up.railway.app/api/v1/auth/register', {
+      const res = await fetch(`${API}/api/v1/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password })
