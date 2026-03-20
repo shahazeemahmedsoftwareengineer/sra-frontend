@@ -1,11 +1,11 @@
 import Head from 'next/head';
 
-export default function Terms() {
+export default function Privacy() {
   return (
     <>
-      <Head><title>Terms of Service — SRA Shield</title></Head>
+      <Head><title>Privacy Policy — SRA Shield</title></Head>
       <div style={{maxWidth:'780px',margin:'0 auto',padding:'120px 28px 80px'}}>
-        <h1 style={{fontFamily:"'Urbanist',sans-serif",fontSize:'42px',fontWeight:900,color:'var(--charcoal)',marginBottom:'8px',letterSpacing:'-1.5px'}}>Terms of Service</h1>
+        <h1 style={{fontFamily:"'Urbanist',sans-serif",fontSize:'42px',fontWeight:900,color:'var(--charcoal)',marginBottom:'8px',letterSpacing:'-1.5px'}}>Privacy Policy</h1>
         <p style={{fontSize:'14px',color:'var(--gray)',marginBottom:'48px'}}>Last updated: March 2026</p>
 
         {[
