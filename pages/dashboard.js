@@ -229,6 +229,24 @@ function DocsPanel() {
             <p style={{fontSize:14,color:'#4a5568',lineHeight:1.7}}>Everything you need to integrate SRA Shield into your application. Full REST API, code examples in 4 languages, and a 30-minute quickstart guide.</p>
           </div>
 
+          {/* ── TWO KEYS CALLOUT — most important concept ── */}
+          <div style={{background:'#fef9ec',border:'1.5px solid #fde68a',borderRadius:14,padding:'16px 20px',marginBottom:32,display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+            <div>
+              <div style={{fontSize:11.5,fontWeight:700,color:'#d97706',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:8}}>⚡ Read this before integrating — SRA uses two different "keys"</div>
+              <div style={{fontSize:13,color:'#92400e',lineHeight:1.7}}>There are <strong>two completely different things</strong> called keys in this system. Confusing them is the #1 developer mistake. They are NOT interchangeable.</div>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              <div style={{background:'#fff',border:'1px solid #fde68a',borderRadius:9,padding:'10px 14px'}}>
+                <div style={{fontSize:12,fontWeight:700,color:'#0984e3',marginBottom:3}}>1. Bearer Token — proves WHO you are</div>
+                <div style={{fontSize:12,color:'#4a5568',lineHeight:1.5}}>From <code style={{background:'#f3f4f6',padding:'1px 4px',borderRadius:3,fontFamily:'monospace',fontSize:11}}>/auth/login</code> → goes in <code style={{background:'#f3f4f6',padding:'1px 4px',borderRadius:3,fontFamily:'monospace',fontSize:11}}>Authorization: Bearer …</code> header on every call</div>
+              </div>
+              <div style={{background:'#fff',border:'1px solid #fde68a',borderRadius:9,padding:'10px 14px'}}>
+                <div style={{fontSize:12,fontWeight:700,color:'#6c5ce7',marginBottom:3}}>2. Encryption Key — LOCKS and UNLOCKS your data</div>
+                <div style={{fontSize:12,color:'#4a5568',lineHeight:1.5}}>From <code style={{background:'#f3f4f6',padding:'1px 4px',borderRadius:3,fontFamily:'monospace',fontSize:11}}>/shield/keys/generate</code> → store in <strong>your own</strong> .env — SRA never stores this</div>
+              </div>
+            </div>
+          </div>
+
           {/* BASE URL */}
           <div className="dp-doc-section" id="dp-base-url">
             <h2 style={{fontFamily:"'DM Sans',sans-serif",fontSize:19,fontWeight:800,color:'#1a2035',marginBottom:10,letterSpacing:'-.2px'}}>Base URL</h2>
@@ -880,7 +898,7 @@ export default function Dashboard() {
 
   const navMain = [
     { id: 'overview', icon: '▦', label: 'Overview' },
-    { id: 'keys',     icon: '⚿', label: 'My Keys' },
+    { id: 'keys',     icon: '⚿', label: 'Enc. Keys' },
     { id: 'encrypt',  icon: '⊕', label: 'Encrypt / Decrypt' },
     { id: 'activity', icon: '↗', label: 'Activity' },
   ];
@@ -1012,7 +1030,7 @@ export default function Dashboard() {
                 <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:16}}>
                   {[
                     {label:'Calls Used',     value: usage?.callsUsed ?? 0,       sub:'This month',         icon:'⚡', bg:'#fff3e0', bdr:'#ffe0b2'},
-                    {label:'Keys Active',    value: keys.filter(k=>k.status==='Active').length, sub:'Encryption keys', icon:'⚿', bg:'#eef9f0', bdr:'#b8f0c8'},
+                    {label:'Enc. Keys Active', value: keys.filter(k=>k.status==='Active').length, sub:'AES-256 encryption keys', icon:'⚿', bg:'#eef9f0', bdr:'#b8f0c8'},
                     {label:'Days to Reset',  value: usage?.daysUntilReset ?? 30,  sub: usage?.resetDate ?? '', icon:'📅', bg:'#eef4ff', bdr:'#c2d8f8'},
                   ].map((s,i)=>(
                     <div key={i} style={{background:s.bg,border:`1px solid ${s.bdr}`,borderRadius:14,padding:'20px 22px',boxShadow:C.cardShadow}}>
@@ -1024,6 +1042,35 @@ export default function Dashboard() {
                       <div style={{fontSize:12,color:C.bodyTxt,marginTop:6,fontWeight:500}}>{s.sub}</div>
                     </div>
                   ))}
+                </div>
+
+                {/* ── TWO KEYS EXPLAINED ─────────────────────────────────── */}
+                <div style={{background:'#eef4ff',border:'1.5px solid #c2d8f8',borderRadius:14,padding:'16px 20px',marginBottom:16,display:'flex',gap:16,flexWrap:'wrap'}}>
+                  <div style={{flex:1,minWidth:260}}>
+                    <div style={{fontSize:11,fontWeight:700,color:'#0984e3',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:8}}>🔑 Two Different Things — Read This Once</div>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                      <div style={{background:'#fff',border:'1px solid #c2d8f8',borderRadius:10,padding:'12px 14px'}}>
+                        <div style={{fontSize:11,fontWeight:700,color:'#0984e3',marginBottom:4}}>1. Bearer Token (API Auth)</div>
+                        <div style={{fontSize:11.5,color:'#4a5568',lineHeight:1.6,marginBottom:8}}>Proves <strong>who you are</strong> to SRA Shield. Goes in every API call header.</div>
+                        <div style={{background:'#1a2035',borderRadius:7,padding:'8px 10px',fontFamily:'DM Mono,monospace',fontSize:10,color:'rgba(255,255,255,.7)',wordBreak:'break-all',lineHeight:1.6}}>
+                          Authorization: Bearer {getToken() ? getToken().slice(0,28)+'…' : 'eyJhbGci...'}
+                        </div>
+                        <button onClick={()=>{navigator.clipboard.writeText(getToken()||'');setCopied('bearer');setTimeout(()=>setCopied(null),2000);}} style={{marginTop:8,background:'#eef4ff',border:'1px solid #c2d8f8',borderRadius:6,padding:'4px 12px',fontSize:11,fontWeight:600,color:'#0984e3',cursor:'pointer',width:'100%'}}>
+                          {copied==='bearer'?'✓ Copied':'Copy Bearer Token'}
+                        </button>
+                      </div>
+                      <div style={{background:'#fff',border:'1px solid #d6ceff',borderRadius:10,padding:'12px 14px'}}>
+                        <div style={{fontSize:11,fontWeight:700,color:'#6c5ce7',marginBottom:4}}>2. Encryption Key (AES-256)</div>
+                        <div style={{fontSize:11.5,color:'#4a5568',lineHeight:1.6,marginBottom:8}}><strong>Locks/unlocks your data.</strong> Store this in YOUR own database or .env file. SRA never stores it.</div>
+                        <div style={{background:'#1a2035',borderRadius:7,padding:'8px 10px',fontFamily:'DM Mono,monospace',fontSize:10,color:'rgba(255,255,255,.7)',lineHeight:1.6}}>
+                          SRA_ENC_KEY=a053b13dfa84…<br/>Store in your .env
+                        </div>
+                        <button onClick={()=>setActiveNav('keys')} style={{marginTop:8,background:'#f0eeff',border:'1px solid #d6ceff',borderRadius:6,padding:'4px 12px',fontSize:11,fontWeight:600,color:'#6c5ce7',cursor:'pointer',width:'100%'}}>
+                          View My Enc. Keys →
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div style={{display:'grid',gridTemplateColumns:'1fr 260px',gap:16,marginBottom:16}}>
@@ -1051,7 +1098,7 @@ export default function Dashboard() {
                     <div style={{fontSize:14,fontWeight:700,color:C.titleTxt,marginBottom:16}}>Quick Actions</div>
                     <div style={{display:'flex',flexDirection:'column',gap:9}}>
                       <button className="gen-btn" onClick={handleGenKey} disabled={genLoading} style={{display:'flex',alignItems:'center',gap:10,padding:'11px 13px',background:'#f0eeff',border:'1px solid #d6ceff',borderRadius:10,color:'#6c5ce7',fontSize:13,fontWeight:600,transition:'all .15s',textAlign:'left',opacity:genLoading?.6:1}}>
-                        <span>⚿</span>{genLoading?'Generating…':'Generate Key'}
+                        <span>⚿</span>{genLoading?'Generating…':'Generate Enc. Key'}
                       </button>
                       <button className="qa-btn" onClick={()=>setActiveNav('encrypt')} style={{display:'flex',alignItems:'center',gap:10,padding:'11px 13px',background:'#f8f9fb',border:`1px solid ${C.cardBorder}`,borderRadius:10,color:C.bodyTxt,fontSize:13,fontWeight:500,transition:'all .15s',textAlign:'left'}}>
                         <span>🔒</span>Encrypt Data
@@ -1068,9 +1115,9 @@ export default function Dashboard() {
 
                 <div style={{background:C.cardBg,border:`1px solid ${C.cardBorder}`,borderRadius:14,padding:22,boxShadow:C.cardShadow}}>
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18}}>
-                    <div style={{fontSize:14,fontWeight:700,color:C.titleTxt}}>Active Keys</div>
+                    <div style={{fontSize:14,fontWeight:700,color:C.titleTxt}}>Active Encryption Keys</div>
                     <button className="gen-btn" onClick={handleGenKey} disabled={genLoading} style={{background:'#f0eeff',border:'1px solid #d6ceff',borderRadius:8,padding:'7px 15px',fontSize:12,fontWeight:600,color:'#6c5ce7',transition:'all .15s',opacity:genLoading?.6:1}}>
-                      {genLoading?'⏳ Generating…':'+ Generate Key'}
+                      {genLoading?'⏳ Generating…':'+ Generate Enc. Key'}
                     </button>
                   </div>
                   {keys.map((k,i)=>(
@@ -1091,11 +1138,26 @@ export default function Dashboard() {
 
             {/* ── MY KEYS ───────────────────────────────────────────────── */}
             {activeNav==='keys' && (
-              <div className="fadeUp" style={{background:C.cardBg,border:`1px solid ${C.cardBorder}`,borderRadius:14,padding:22,boxShadow:C.cardShadow}}>
+              <div className="fadeUp">
+                {/* What is an encryption key banner */}
+                <div style={{background:'#f0eeff',border:'1.5px solid #d6ceff',borderRadius:12,padding:'14px 18px',marginBottom:16,display:'flex',gap:12,alignItems:'flex-start'}}>
+                  <span style={{fontSize:20,flexShrink:0}}>⚿</span>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:700,color:'#6c5ce7',marginBottom:4}}>These are your AES-256-GCM Encryption Keys — not your API token</div>
+                    <div style={{fontSize:12.5,color:'#4a5568',lineHeight:1.65}}>
+                      These keys <strong>encrypt and decrypt your data</strong>. Store them in your own database or <code style={{background:'#e8e4ff',padding:'1px 5px',borderRadius:4,fontFamily:'monospace'}}>SRA_ENC_KEY</code> environment variable.
+                      SRA Shield <strong>never stores</strong> these — if you lose one, that data is unrecoverable.
+                      <span style={{display:'block',marginTop:6,color:'#0984e3'}}>
+                        🔐 Your <strong>Bearer Token</strong> (for API authentication) is separate — find it on the Overview page.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div style={{background:'#fff8ec',border:`1px solid #ffe0b2`,borderRadius:14,padding:22,boxShadow:'0 1px 6px rgba(255,159,67,.1)'}}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18}}>
-                  <div style={{fontSize:14,fontWeight:700,color:C.titleTxt}}>Encryption Keys</div>
+                  <div style={{fontSize:14,fontWeight:700,color:'#1a2035'}}>Encryption Keys</div>
                   <button className="gen-btn" onClick={handleGenKey} disabled={genLoading} style={{background:'#f0eeff',border:'1px solid #d6ceff',borderRadius:8,padding:'7px 15px',fontSize:12,fontWeight:600,color:'#6c5ce7',transition:'all .15s'}}>
-                    {genLoading?'⏳ Generating…':'+ Generate Key'}
+                    {genLoading?'⏳ Generating…':'+ Generate Enc. Key'}
                   </button>
                 </div>
                 {keys.map((k,i)=>(
@@ -1118,6 +1180,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                 ))}
+                </div>{/* end inner card */}
               </div>
             )}
 
