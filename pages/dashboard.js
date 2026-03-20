@@ -130,97 +130,331 @@ function UsageCard({ usage }) {
   );
 }
 
-// ── DOCS PANEL ────────────────────────────────────────────────────────────────
-function DocsPanel({ C }) {
-  const [activeEndpoint, setActiveEndpoint] = useState('generate');
+// ── DOCS PANEL — full docs.js content ────────────────────────────────────────
+function DocsPanel() {
   const [activeLang, setActiveLang] = useState('js');
 
-  const BASE = 'https://sra-backend-production.up.railway.app/api/v1';
+  return (
+    <div className="fadeUp">
+      <style>{`
+        .dp-layout{display:grid;grid-template-columns:230px 1fr;gap:0;min-height:600px}
+        .dp-sidebar{position:sticky;top:0;background:#fff;border:1px solid #e5e7eb;border-radius:14px 0 0 14px;padding:22px 0;overflow-y:auto;max-height:calc(100vh - 120px)}
+        .dp-section{margin-bottom:20px;padding:0 16px}
+        .dp-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#9ca3af;margin-bottom:8px}
+        .dp-links{display:flex;flex-direction:column;gap:2px}
+        .dp-link{display:block;padding:6px 10px;border-radius:8px;font-size:13px;font-weight:500;color:#6b7280;text-decoration:none;transition:all .2s;cursor:pointer}
+        .dp-link:hover{background:#f3f4f6;color:#1a1a1a}
+        .dp-link.on{background:#ede9fe;color:#8b5cf6;font-weight:600}
+        .dp-content{background:#fff;border:1px solid #e5e7eb;border-radius:0 14px 14px 0;border-left:none;padding:36px 40px;overflow-y:auto}
+        .dp-doc-section{margin-bottom:56px;padding-bottom:48px;border-bottom:1px solid #e5e7eb}
+        .dp-doc-section:last-child{border-bottom:none}
+        .dp-endpoint{display:flex;align-items:center;gap:10px;background:#1a1a1a;border-radius:10px;padding:12px 16px;margin:16px 0;font-family:'DM Mono',monospace}
+        .dp-ep-method{font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px}
+        .dp-ep-post{background:rgba(139,92,246,.2);color:#8b5cf6}
+        .dp-ep-get{background:rgba(52,211,153,.2);color:#34d399}
+        .dp-ep-path{font-size:12.5px;color:rgba(255,255,255,.7)}
+        .dp-ep-copy{margin-left:auto;font-size:11px;color:rgba(255,255,255,.25);cursor:pointer;padding:3px 9px;border-radius:5px;border:1px solid rgba(255,255,255,.1);background:none;font-family:inherit}
+        .dp-ep-copy:hover{color:rgba(255,255,255,.6)}
+        .dp-param-table{width:100%;border-collapse:collapse;font-size:13px;margin:14px 0}
+        .dp-param-table th{text-align:left;padding:9px 13px;background:#f3f4f6;font-size:10.5px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.6px}
+        .dp-param-table td{padding:10px 13px;border-bottom:1px solid #e5e7eb;vertical-align:top}
+        .dp-param-table tr:last-child td{border-bottom:none}
+        .dp-p-name{font-family:'DM Mono',monospace;font-size:12px;color:#1a1a1a}
+        .dp-p-type{font-size:11px;padding:2px 7px;border-radius:4px;background:#f3f4f6;color:#6b7280;font-family:monospace}
+        .dp-p-req{font-size:10.5px;padding:2px 7px;border-radius:100px;background:#fef3c7;color:#d97706;font-weight:600}
+        .dp-p-opt{font-size:10.5px;padding:2px 7px;border-radius:100px;background:#f3f4f6;color:#6b7280;font-weight:600}
+        .dp-p-desc{color:#6b7280;font-size:12.5px;line-height:1.55}
+        .dp-resp-block{background:#0f0f0f;border-radius:12px;overflow:hidden;margin:14px 0}
+        .dp-rb-top{background:#1a1a1a;padding:8px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.05)}
+        .dp-rb-dots{display:flex;gap:4px}
+        .dp-rb-dots span{width:7px;height:7px;border-radius:50%}
+        .dp-rb-dots span:nth-child(1){background:#FF5F57}.dp-rb-dots span:nth-child(2){background:#FFBD2E}.dp-rb-dots span:nth-child(3){background:#28C840}
+        .dp-rb-label{font-size:10.5px;color:rgba(255,255,255,.3);font-family:monospace}
+        .dp-rb-status{margin-left:auto;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:100px;background:rgba(52,211,153,.12);color:#34d399;font-family:monospace}
+        .dp-rb-body{padding:18px}
+        .dp-lang-tabs{display:flex;gap:4px;margin-bottom:0}
+        .dp-lang-tab{padding:6px 13px;border-radius:7px 7px 0 0;font-size:12px;font-weight:600;color:#6b7280;cursor:pointer;background:#f3f4f6;border:1.5px solid #e5e7eb;border-bottom:none;transition:all .2s}
+        .dp-lang-tab.on{background:#0f0f0f;color:rgba(255,255,255,.75);border-color:#0f0f0f}
+        .dp-note-box{display:flex;gap:12px;background:#ede9fe;border:1.5px solid rgba(139,92,246,.2);border-radius:10px;padding:14px;margin:14px 0;font-size:13px;color:#1a1a1a;line-height:1.6}
+        .dp-warn-box{display:flex;gap:12px;background:#fef3c7;border:1.5px solid #fde68a;border-radius:10px;padding:14px;margin:14px 0;font-size:13px;color:#1a1a1a;line-height:1.6}
+        .dp-inline-code{background:#f3f4f6;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px}
+        @media(max-width:860px){.dp-layout{grid-template-columns:1fr}.dp-sidebar{display:none}.dp-content{border-radius:14px;border-left:1px solid #e5e7eb}}
+      `}</style>
 
-  const endpoints = [
-    { id: 'generate', label: 'Generate Key', method: 'POST', path: '/shield/keys/generate', color: '#6c5ce7', bg: '#f0eeff', bdr: '#d6ceff' },
-    { id: 'encrypt',  label: 'Encrypt',      method: 'POST', path: '/shield/encrypt',       color: '#0984e3', bg: '#eef4ff', bdr: '#c2d8f8' },
-    { id: 'decrypt',  label: 'Decrypt',      method: 'POST', path: '/shield/decrypt',       color: '#28c76f', bg: '#eef9f0', bdr: '#b8f0c8' },
-    { id: 'audit',    label: 'Audit Log',    method: 'GET',  path: '/shield/keys/audit',    color: '#ff9f43', bg: '#fff3e0', bdr: '#ffe0b2' },
-    { id: 'rotate',   label: 'Rotate Key',   method: 'POST', path: '/shield/keys/rotate',   color: '#fd79a8', bg: '#fff0f6', bdr: '#ffd6e7' },
-    { id: 'verify',   label: 'Verify Proof', method: 'GET',  path: '/shield/verify/{code}', color: '#00cec9', bg: '#e8fffe', bdr: '#b2f0ee' },
-  ];
+      <div className="dp-layout">
+        {/* SIDEBAR */}
+        <aside className="dp-sidebar">
+          <div className="dp-section">
+            <div className="dp-title">Getting Started</div>
+            <div className="dp-links">
+              <a href="#dp-quickstart" className="dp-link on">Quick Start</a>
+              <a href="#dp-auth" className="dp-link">Authentication</a>
+              <a href="#dp-base-url" className="dp-link">Base URL</a>
+            </div>
+          </div>
+          <div className="dp-section">
+            <div className="dp-title">API Reference</div>
+            <div className="dp-links">
+              <a href="#dp-register" className="dp-link">Register</a>
+              <a href="#dp-login" className="dp-link">Login</a>
+              <a href="#dp-generate-key" className="dp-link">Generate Key</a>
+              <a href="#dp-encrypt" className="dp-link">Encrypt</a>
+              <a href="#dp-decrypt" className="dp-link">Decrypt</a>
+            </div>
+          </div>
+          <div className="dp-section">
+            <div className="dp-title">Code Examples</div>
+            <div className="dp-links">
+              <a href="#dp-code" className="dp-link">JavaScript</a>
+              <a href="#dp-code" className="dp-link">Python</a>
+              <a href="#dp-code" className="dp-link">PHP</a>
+              <a href="#dp-code" className="dp-link">Java</a>
+            </div>
+          </div>
+          <div className="dp-section">
+            <div className="dp-title">Errors</div>
+            <div className="dp-links">
+              <a href="#dp-errors" className="dp-link">Error Codes</a>
+              <a href="#dp-rate-limits" className="dp-link">Rate Limits</a>
+            </div>
+          </div>
+        </aside>
 
-  const endpointDetails = {
-    generate: {
-      description: 'Generate a new 256-bit encryption key from the multi-source entropy engine (Bitcoin + Ethereum + Seismic + Server Timing). No body required.',
-      request: null,
-      response: `{\n  "success": true,\n  "data": {\n    "encryptionKey": "a053b13dfa84f7164da57602c9586b32...",\n    "verificationCode": "SRA-K-KQ4T47M6",\n    "verifyUrl": "https://sra.com/shield/verify/SRA-K-KQ4T47M6"\n  }\n}`,
-      warning: '⚠️  SRA Shield does NOT store your encryption key. Save it immediately — if lost, encrypted data is unrecoverable.',
-    },
-    encrypt: {
-      description: 'Encrypt any plaintext string. The encryption uses AES-128 (Fernet) with HMAC-SHA256 integrity verification.',
-      request: `{\n  "plaintext": "Patient: John Doe, DOB: 1985-03-12, Diagnosis: Hypertension"\n}`,
-      response: `{\n  "success": true,\n  "data": {\n    "encrypted": "SRA_ENC_gAAAAABpqILQevj_k3Lj4-mt_2mY8..."\n  }\n}`,
-      warning: null,
-    },
-    decrypt: {
-      description: 'Decrypt an encrypted SRA Shield string back to its original plaintext. Uses the same key that was active when encryption occurred.',
-      request: `{\n  "encrypted": "SRA_ENC_gAAAAABpqILQevj_k3Lj4-mt_2mY8..."\n}`,
-      response: `{\n  "success": true,\n  "data": {\n    "plaintext": "Patient: John Doe, DOB: 1985-03-12, Diagnosis: Hypertension"\n  }\n}`,
-      warning: null,
-    },
-    audit: {
-      description: 'Retrieve the full audit log of all key generation events for your account. Useful for compliance documentation.',
-      request: null,
-      response: `{\n  "success": true,\n  "data": [\n    {\n      "id": 1,\n      "verificationCode": "SRA-K-KQ4T47M6",\n      "tier": "fast",\n      "createdAt": "2026-03-04T10:22:31"\n    }\n  ]\n}`,
-      warning: null,
-    },
-    rotate: {
-      description: 'Rotate your encryption key. Generates a new key from fresh entropy. Your old key is invalidated — re-encrypt any data that used the old key.',
-      request: null,
-      response: `{\n  "success": true,\n  "data": {\n    "encryptionKey": "c628b9c9de447e01b8684358a7d3bbc4...",\n    "verificationCode": "SRA-K-D4X9DU5X"\n  }\n}`,
-      warning: '⚠️  After rotation, data encrypted with the old key can only be decrypted using the old key. Store both keys if needed.',
-    },
-    verify: {
-      description: 'Public endpoint — no auth required. Returns the full entropy proof for any verification code. Share this URL with regulators or auditors.',
-      request: null,
-      response: `{\n  "success": true,\n  "data": {\n    "verificationCode": "SRA-K-KQ4T47M6",\n    "btcPrice": "BTCUSDT-65618.00",\n    "ethBlockHash": "0x1761f79",\n    "seismicData": "M2.1 near Ridgecrest CA",\n    "serverTiming": "5298513042300",\n    "createdAt": "2026-03-04T10:22:31"\n  }\n}`,
-      warning: null,
-    },
-  };
+        {/* MAIN CONTENT */}
+        <main className="dp-content">
 
-  const codeExamples = {
-    js: `// SRA Shield — JavaScript Quick Start
-const BASE = '${BASE}';
+          <div style={{marginBottom:32}}>
+            <div style={{display:'inline-flex',alignItems:'center',gap:7,padding:'5px 13px',borderRadius:100,background:'#ede9fe',border:'1px solid rgba(139,92,246,.2)',fontSize:12,fontWeight:700,color:'#8b5cf6',marginBottom:12}}>📚 API Reference</div>
+            <h1 style={{fontFamily:"'DM Sans',sans-serif",fontSize:32,fontWeight:800,color:'#1a2035',letterSpacing:'-1px',marginBottom:8}}>Documentation</h1>
+            <p style={{fontSize:14,color:'#4a5568',lineHeight:1.7}}>Everything you need to integrate SRA Shield into your application. Full REST API, code examples in 4 languages, and a 30-minute quickstart guide.</p>
+          </div>
 
-// 1. Login
-const login = await fetch(\`\${BASE}/auth/login\`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email: 'you@company.com', password: 'YourPass123!' })
-});
-const { data: { token } } = await login.json();
-const headers = { Authorization: \`Bearer \${token}\`, 'Content-Type': 'application/json' };
+          {/* BASE URL */}
+          <div className="dp-doc-section" id="dp-base-url">
+            <h2 style={{fontFamily:"'DM Sans',sans-serif",fontSize:19,fontWeight:800,color:'#1a2035',marginBottom:10,letterSpacing:'-.2px'}}>Base URL</h2>
+            <div className="dp-endpoint">
+              <div className="dp-ep-path">https://sra-backend-production.up.railway.app</div>
+              <button className="dp-ep-copy" onClick={() => navigator.clipboard.writeText('https://sra-backend-production.up.railway.app')}>copy</button>
+            </div>
+            <p style={{fontSize:13,color:'#4a5568'}}>All API endpoints are prefixed with <span className="dp-inline-code">/api/v1</span>. All requests and responses use JSON.</p>
+          </div>
 
-// 2. Generate key  ⚠️ Save this!
-const keyRes = await fetch(\`\${BASE}/shield/keys/generate\`, { method: 'POST', headers });
-const { data: { encryptionKey } } = await keyRes.json();
+          {/* QUICKSTART */}
+          <div className="dp-doc-section" id="dp-quickstart">
+            <h2 style={{fontFamily:"'DM Sans',sans-serif",fontSize:19,fontWeight:800,color:'#1a2035',marginBottom:10,letterSpacing:'-.2px'}}>Quick Start</h2>
+            <p style={{fontSize:13,color:'#4a5568',marginBottom:14,lineHeight:1.7}}>Get from zero to encrypted data in 4 steps:</p>
+            <div className="dp-resp-block">
+              <div className="dp-rb-top"><div className="dp-rb-dots"><span/><span/><span/></div><div className="dp-rb-label">4-step quickstart</div></div>
+              <div className="dp-rb-body">
+                <pre style={{fontFamily:"'DM Mono',monospace",fontSize:12,lineHeight:1.9,color:'rgba(255,255,255,.8)',margin:0,whiteSpace:'pre-wrap'}}>{`# Step 1 — Register
+POST /api/v1/auth/register
+{"email":"you@company.com","password":"YourPassword123!"}
 
-// 3. Encrypt
-const encRes = await fetch(\`\${BASE}/shield/encrypt\`, {
-  method: 'POST', headers,
-  body: JSON.stringify({ plaintext: 'Sensitive data here' })
-});
-const { data: { encrypted } } = await encRes.json();
+# Step 2 — Login to get JWT
+POST /api/v1/auth/login
+{"email":"you@company.com","password":"YourPassword123!"}
+# → save data.token as TOKEN
 
-// 4. Decrypt
-const decRes = await fetch(\`\${BASE}/shield/decrypt\`, {
-  method: 'POST', headers,
-  body: JSON.stringify({ encrypted })
-});
-const { data: { plaintext } } = await decRes.json();
-console.log('Decrypted:', plaintext);`,
+# Step 3 — Generate key
+POST /api/v1/shield/keys/generate  (Bearer TOKEN)
+# → save data.encryptionKey
 
-    python: `# SRA Shield — Python Quick Start
+# Step 4 — Encrypt anything
+POST /api/v1/shield/encrypt  (Bearer TOKEN)
+{"plaintext":"Your sensitive data here"}
+# → get data.encrypted → store it safely`}</pre>
+              </div>
+            </div>
+          </div>
+
+          {/* AUTH */}
+          <div className="dp-doc-section" id="dp-auth">
+            <h2 style={{fontFamily:"'DM Sans',sans-serif",fontSize:19,fontWeight:800,color:'#1a2035',marginBottom:10,letterSpacing:'-.2px'}}>Authentication</h2>
+            <p style={{fontSize:13,color:'#4a5568',marginBottom:12,lineHeight:1.7}}>All <span className="dp-inline-code">/shield/*</span> endpoints require a Bearer token in the Authorization header.</p>
+            <div className="dp-resp-block">
+              <div className="dp-rb-top"><div className="dp-rb-dots"><span/><span/><span/></div><div className="dp-rb-label">Authorization header</div></div>
+              <div className="dp-rb-body">
+                <pre style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:'rgba(255,255,255,.8)',margin:0}}>{`Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`}</pre>
+              </div>
+            </div>
+            <div className="dp-note-box"><span style={{flexShrink:0,fontSize:16}}>💡</span><div>Tokens are valid for 30 days. Request a new token using your email/password login.</div></div>
+          </div>
+
+          {/* REGISTER */}
+          <div className="dp-doc-section" id="dp-register">
+            <h2 style={{fontFamily:"'DM Sans',sans-serif",fontSize:19,fontWeight:800,color:'#1a2035',marginBottom:4,letterSpacing:'-.2px'}}>Register</h2>
+            <p style={{fontSize:13,color:'#4a5568',marginBottom:12}}>Create a new account.</p>
+            <div className="dp-endpoint"><div className="dp-ep-method dp-ep-post">POST</div><div className="dp-ep-path">/api/v1/auth/register</div></div>
+            <table className="dp-param-table">
+              <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr><td><span className="dp-p-name">name</span></td><td><span className="dp-p-type">string</span></td><td><span className="dp-p-req">Required</span></td><td className="dp-p-desc">Full name</td></tr>
+                <tr><td><span className="dp-p-name">email</span></td><td><span className="dp-p-type">string</span></td><td><span className="dp-p-req">Required</span></td><td className="dp-p-desc">Valid email address</td></tr>
+                <tr><td><span className="dp-p-name">password</span></td><td><span className="dp-p-type">string</span></td><td><span className="dp-p-req">Required</span></td><td className="dp-p-desc">Min 8 chars, 1 uppercase, 1 number</td></tr>
+              </tbody>
+            </table>
+            <div className="dp-resp-block">
+              <div className="dp-rb-top"><div className="dp-rb-dots"><span/><span/><span/></div><div className="dp-rb-label">Response</div><div className="dp-rb-status">201 Created</div></div>
+              <div className="dp-rb-body">
+                <pre style={{fontFamily:"'DM Mono',monospace",fontSize:12,lineHeight:1.8,color:'rgba(255,255,255,.8)',margin:0,whiteSpace:'pre-wrap'}}>{`{
+  "status": "success",
+  "message": "User registered successfully",
+  "data": {
+    "userId": "uuid-here",
+    "email": "you@company.com"
+  }
+}`}</pre>
+              </div>
+            </div>
+          </div>
+
+          {/* LOGIN */}
+          <div className="dp-doc-section" id="dp-login">
+            <h2 style={{fontFamily:"'DM Sans',sans-serif",fontSize:19,fontWeight:800,color:'#1a2035',marginBottom:4,letterSpacing:'-.2px'}}>Login</h2>
+            <p style={{fontSize:13,color:'#4a5568',marginBottom:12}}>Authenticate and receive a JWT token.</p>
+            <div className="dp-endpoint"><div className="dp-ep-method dp-ep-post">POST</div><div className="dp-ep-path">/api/v1/auth/login</div></div>
+            <table className="dp-param-table">
+              <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr><td><span className="dp-p-name">email</span></td><td><span className="dp-p-type">string</span></td><td><span className="dp-p-req">Required</span></td><td className="dp-p-desc">Registered email address</td></tr>
+                <tr><td><span className="dp-p-name">password</span></td><td><span className="dp-p-type">string</span></td><td><span className="dp-p-req">Required</span></td><td className="dp-p-desc">Account password</td></tr>
+              </tbody>
+            </table>
+            <div className="dp-resp-block">
+              <div className="dp-rb-top"><div className="dp-rb-dots"><span/><span/><span/></div><div className="dp-rb-label">Response</div><div className="dp-rb-status">200 OK</div></div>
+              <div className="dp-rb-body">
+                <pre style={{fontFamily:"'DM Mono',monospace",fontSize:12,lineHeight:1.8,color:'rgba(255,255,255,.8)',margin:0,whiteSpace:'pre-wrap'}}>{`{
+  "status": "success",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "userId": "uuid-here",
+    "email": "you@company.com"
+  }
+}`}</pre>
+              </div>
+            </div>
+          </div>
+
+          {/* GENERATE KEY */}
+          <div className="dp-doc-section" id="dp-generate-key">
+            <h2 style={{fontFamily:"'DM Sans',sans-serif",fontSize:19,fontWeight:800,color:'#1a2035',marginBottom:4,letterSpacing:'-.2px'}}>Generate Encryption Key</h2>
+            <p style={{fontSize:13,color:'#4a5568',marginBottom:12}}>Generate a new 256-bit encryption key from the multi-source entropy engine.</p>
+            <div className="dp-endpoint"><div className="dp-ep-method dp-ep-post">POST</div><div className="dp-ep-path">/api/v1/shield/keys/generate</div></div>
+            <p style={{fontSize:13,color:'#4a5568',margin:'8px 0'}}>No body required. Authenticated via Bearer token.</p>
+            <div className="dp-resp-block">
+              <div className="dp-rb-top"><div className="dp-rb-dots"><span/><span/><span/></div><div className="dp-rb-label">Response</div><div className="dp-rb-status">200 OK</div></div>
+              <div className="dp-rb-body">
+                <pre style={{fontFamily:"'DM Mono',monospace",fontSize:12,lineHeight:1.8,color:'rgba(255,255,255,.8)',margin:0,whiteSpace:'pre-wrap'}}>{`{
+  "status": "success",
+  "data": {
+    "encryptionKey": "a053b13dfa84f7164da57602c9586b32889185a0...",
+    "verificationCode": "SRA-K-KQ4T47M6",
+    "verifyUrl": "https://sra.com/shield/verify/SRA-K-KQ4T47M6"
+  }
+}`}</pre>
+              </div>
+            </div>
+            <div className="dp-warn-box"><span style={{flexShrink:0,fontSize:16}}>⚠️</span><div><strong>Store this key securely.</strong> SRA Shield does not store your encryption key. If you lose it, your encrypted data cannot be recovered.</div></div>
+          </div>
+
+          {/* ENCRYPT */}
+          <div className="dp-doc-section" id="dp-encrypt">
+            <h2 style={{fontFamily:"'DM Sans',sans-serif",fontSize:19,fontWeight:800,color:'#1a2035',marginBottom:4,letterSpacing:'-.2px'}}>Encrypt</h2>
+            <p style={{fontSize:13,color:'#4a5568',marginBottom:12}}>Encrypt any plaintext string using AES-256-GCM.</p>
+            <div className="dp-endpoint"><div className="dp-ep-method dp-ep-post">POST</div><div className="dp-ep-path">/api/v1/shield/encrypt</div></div>
+            <table className="dp-param-table">
+              <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr><td><span className="dp-p-name">plaintext</span></td><td><span className="dp-p-type">string</span></td><td><span className="dp-p-req">Required</span></td><td className="dp-p-desc">The data to encrypt. Any string value.</td></tr>
+              </tbody>
+            </table>
+            <div className="dp-resp-block">
+              <div className="dp-rb-top"><div className="dp-rb-dots"><span/><span/><span/></div><div className="dp-rb-label">Response</div><div className="dp-rb-status">200 OK</div></div>
+              <div className="dp-rb-body">
+                <pre style={{fontFamily:"'DM Mono',monospace",fontSize:12,lineHeight:1.8,color:'rgba(255,255,255,.8)',margin:0,whiteSpace:'pre-wrap'}}>{`{
+  "status": "success",
+  "data": {
+    "encrypted": "SRA_ENC_IjIiOiJlbmMiLCJ0eXAiOiJKV1Qi...",
+    "algorithm": "AES-256-GCM"
+  }
+}`}</pre>
+              </div>
+            </div>
+          </div>
+
+          {/* DECRYPT */}
+          <div className="dp-doc-section" id="dp-decrypt">
+            <h2 style={{fontFamily:"'DM Sans',sans-serif",fontSize:19,fontWeight:800,color:'#1a2035',marginBottom:4,letterSpacing:'-.2px'}}>Decrypt</h2>
+            <p style={{fontSize:13,color:'#4a5568',marginBottom:12}}>Decrypt an encrypted SRA Shield string back to plaintext.</p>
+            <div className="dp-endpoint"><div className="dp-ep-method dp-ep-post">POST</div><div className="dp-ep-path">/api/v1/shield/decrypt</div></div>
+            <table className="dp-param-table">
+              <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr><td><span className="dp-p-name">encrypted</span></td><td><span className="dp-p-type">string</span></td><td><span className="dp-p-req">Required</span></td><td className="dp-p-desc">The encrypted string returned from /encrypt</td></tr>
+              </tbody>
+            </table>
+            <div className="dp-resp-block">
+              <div className="dp-rb-top"><div className="dp-rb-dots"><span/><span/><span/></div><div className="dp-rb-label">Response</div><div className="dp-rb-status">200 OK</div></div>
+              <div className="dp-rb-body">
+                <pre style={{fontFamily:"'DM Mono',monospace",fontSize:12,lineHeight:1.8,color:'rgba(255,255,255,.8)',margin:0,whiteSpace:'pre-wrap'}}>{`{
+  "status": "success",
+  "data": {
+    "plaintext": "Your sensitive data here",
+    "algorithm": "AES-256-GCM",
+    "verified": true
+  }
+}`}</pre>
+              </div>
+            </div>
+          </div>
+
+          {/* CODE EXAMPLES */}
+          <div className="dp-doc-section" id="dp-code">
+            <h2 style={{fontFamily:"'DM Sans',sans-serif",fontSize:19,fontWeight:800,color:'#1a2035',marginBottom:12,letterSpacing:'-.2px'}}>Code Examples</h2>
+            <div className="dp-lang-tabs">
+              {[['js','JavaScript'],['py','Python'],['php','PHP'],['java','Java']].map(([id,label]) => (
+                <div key={id} className={`dp-lang-tab${activeLang===id?' on':''}`} onClick={()=>setActiveLang(id)}>{label}</div>
+              ))}
+            </div>
+            <div className="dp-resp-block" style={{borderRadius:'0 12px 12px 12px',marginTop:0}}>
+              <div className="dp-rb-body">
+                {activeLang==='js' && <pre style={{fontFamily:"'DM Mono',monospace",fontSize:12,lineHeight:1.9,color:'rgba(255,255,255,.8)',margin:0,whiteSpace:'pre-wrap'}}>{`// SRA Shield — Full JavaScript Example
+const BASE = 'https://sra-backend-production.up.railway.app/api/v1';
+
+async function sraShield() {
+  // 1. Login
+  const login = await fetch(\`\${BASE}/auth/login\`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'you@company.com', password: 'YourPass123!' })
+  });
+  const { data: { token } } = await login.json();
+  const headers = { Authorization: \`Bearer \${token}\`, 'Content-Type': 'application/json' };
+
+  // 2. Generate key  ⚠️ Save this!
+  const keyRes = await fetch(\`\${BASE}/shield/keys/generate\`, { method: 'POST', headers });
+  const { data: { encryptionKey } } = await keyRes.json();
+  console.log('Key:', encryptionKey);
+
+  // 3. Encrypt
+  const encRes = await fetch(\`\${BASE}/shield/encrypt\`, {
+    method: 'POST', headers,
+    body: JSON.stringify({ plaintext: 'Patient: John Doe, DOB: 1985-03-12' })
+  });
+  const { data: { encrypted } } = await encRes.json();
+
+  // 4. Decrypt
+  const decRes = await fetch(\`\${BASE}/shield/decrypt\`, {
+    method: 'POST', headers,
+    body: JSON.stringify({ encrypted })
+  });
+  const { data: { plaintext } } = await decRes.json();
+  console.log('Decrypted:', plaintext);
+}`}</pre>}
+                {activeLang==='py' && <pre style={{fontFamily:"'DM Mono',monospace",fontSize:12,lineHeight:1.9,color:'rgba(255,255,255,.8)',margin:0,whiteSpace:'pre-wrap'}}>{`# SRA Shield — Full Python Example
 import requests
 
-BASE = '${BASE}'
+BASE = 'https://sra-backend-production.up.railway.app/api/v1'
 
 # 1. Login
 r = requests.post(f'{BASE}/auth/login',
@@ -235,399 +469,292 @@ print(f'Key: {encryption_key}')
 
 # 3. Encrypt
 enc = requests.post(f'{BASE}/shield/encrypt', headers=headers,
-    json={'plaintext': 'Sensitive data here'})
+    json={'plaintext': 'Patient: John Doe, DOB: 1985-03-12'})
 encrypted = enc.json()['data']['encrypted']
 
 # 4. Decrypt
 dec = requests.post(f'{BASE}/shield/decrypt', headers=headers,
     json={'encrypted': encrypted})
-print(dec.json()['data']['plaintext'])`,
+print(dec.json()['data']['plaintext'])`}</pre>}
+                {activeLang==='php' && <pre style={{fontFamily:"'DM Mono',monospace",fontSize:12,lineHeight:1.9,color:'rgba(255,255,255,.8)',margin:0,whiteSpace:'pre-wrap'}}>{`<?php // SRA Shield — PHP Example
+$BASE = 'https://sra-backend-production.up.railway.app/api/v1';
 
-    php: `<?php
-// SRA Shield — PHP Quick Start
-$BASE = '${BASE}';
-
-function sraPost($url, $data = null, $token = null) {
-    $ch = curl_init($url);
+function sra_post($path, $data, $token = null) {
+    $ch = curl_init($GLOBALS['BASE'] . $path);
     $headers = ['Content-Type: application/json'];
-    if ($token) $headers[] = "Authorization: Bearer $token";
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => $data ? json_encode($data) : '{}',
-        CURLOPT_HTTPHEADER => $headers,
-    ]);
+    if ($token) $headers[] = 'Authorization: Bearer ' . $token;
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true, CURLOPT_POSTFIELDS => json_encode($data),
+        CURLOPT_HTTPHEADER => $headers]);
     return json_decode(curl_exec($ch), true);
 }
 
 // 1. Login
-$login = sraPost("$BASE/auth/login",
-    ['email' => 'you@company.com', 'password' => 'YourPass123!']);
+$login = sra_post('/auth/login', ['email'=> 'you@company.com','password'=> 'YourPass123!']);
 $token = $login['data']['token'];
 
 // 2. Generate key  ⚠️ Save this!
-$keyRes = sraPost("$BASE/shield/keys/generate", null, $token);
-$key = $keyRes['data']['encryptionKey'];
+$key = sra_post('/shield/keys/generate', [], $token);
+$encryptionKey = $key['data']['encryptionKey'];
 
 // 3. Encrypt
-$enc = sraPost("$BASE/shield/encrypt",
-    ['plaintext' => 'Sensitive data'], $token);
+$enc = sra_post('/shield/encrypt', ['plaintext'=> 'Patient: John Doe'], $token);
 $encrypted = $enc['data']['encrypted'];
 
 // 4. Decrypt
-$dec = sraPost("$BASE/shield/decrypt",
-    ['encrypted' => $encrypted], $token);
-echo $dec['data']['plaintext'];`,
+$dec = sra_post('/shield/decrypt', ['encrypted'=> $encrypted], $token);
+echo $dec['data']['plaintext'];`}</pre>}
+                {activeLang==='java' && <pre style={{fontFamily:"'DM Mono',monospace",fontSize:12,lineHeight:1.9,color:'rgba(255,255,255,.8)',margin:0,whiteSpace:'pre-wrap'}}>{`// SRA Shield — Java Example (java.net.http)
+import java.net.http.*;
+import java.net.URI;
 
-    java: `// SRA Shield — Java Quick Start (OkHttp)
-import okhttp3.*;
-import org.json.JSONObject;
-
-OkHttpClient client = new OkHttpClient();
-String BASE = "${BASE}";
-MediaType JSON = MediaType.get("application/json");
+String BASE = "https://sra-backend-production.up.railway.app/api/v1";
+var client = HttpClient.newHttpClient();
 
 // 1. Login
-String loginBody = new JSONObject()
-    .put("email", "you@company.com")
-    .put("password", "YourPass123!").toString();
-Request loginReq = new Request.Builder()
-    .url(BASE + "/auth/login")
-    .post(RequestBody.create(loginBody, JSON)).build();
-JSONObject loginRes = new JSONObject(client.newCall(loginReq)
-    .execute().body().string());
-String token = loginRes.getJSONObject("data").getString("token");
+var loginReq = HttpRequest.newBuilder()
+    .uri(URI.create(BASE + "/auth/login"))
+    .header("Content-Type", "application/json")
+    .POST(HttpRequest.BodyPublishers.ofString(
+        "{\"email\":\"you@company.com\",\"password\":\"YourPass123!\"}"))
+    .build();
+var loginBody = client.send(loginReq, HttpResponse.BodyHandlers.ofString()).body();
+// parse JSON to get token...
 
-// 2. Generate key  ⚠️ Save this!
-Request keyReq = new Request.Builder()
-    .url(BASE + "/shield/keys/generate")
-    .addHeader("Authorization", "Bearer " + token)
-    .post(RequestBody.create("{}", JSON)).build();
-JSONObject keyRes = new JSONObject(client.newCall(keyReq)
-    .execute().body().string());
-String key = keyRes.getJSONObject("data").getString("encryptionKey");
-
-// 3. Encrypt
-String encBody = new JSONObject()
-    .put("plaintext", "Sensitive data").toString();
-Request encReq = new Request.Builder()
-    .url(BASE + "/shield/encrypt")
-    .addHeader("Authorization", "Bearer " + token)
-    .post(RequestBody.create(encBody, JSON)).build();
-JSONObject encRes = new JSONObject(client.newCall(encReq)
-    .execute().body().string());
-System.out.println(encRes.getJSONObject("data").getString("encrypted"));`,
-  };
-
-  const active = endpointDetails[activeEndpoint];
-  const activeEp = endpoints.find(e => e.id === activeEndpoint);
-
-  return (
-    <div className="fadeUp">
-      {/* Header */}
-      <div style={{background:'#fff',border:'1px solid #e8edf5',borderRadius:14,padding:'22px 26px',marginBottom:16,boxShadow:'0 1px 4px rgba(0,0,0,.04)'}}>
-        <div style={{display:'flex',alignItems:'center',gap:14}}>
-          <div style={{width:44,height:44,background:'linear-gradient(135deg,#6c5ce7,#4338ca)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,boxShadow:'0 4px 12px rgba(108,92,231,.3)'}}>📚</div>
-          <div>
-            <div style={{fontSize:20,fontWeight:800,color:'#1a2035',letterSpacing:'-0.5px'}}>API Documentation</div>
-            <div style={{fontSize:13,color:'#a0aec0',marginTop:2}}>Base URL: <span style={{fontFamily:'DM Mono,monospace',color:'#6c5ce7',fontSize:12}}>{BASE}</span></div>
-          </div>
-          <div style={{marginLeft:'auto',background:'#eef9f0',border:'1px solid #b8f0c8',borderRadius:100,padding:'6px 14px',fontSize:12,fontWeight:700,color:'#28c76f'}}>
-            ● API Online
-          </div>
-        </div>
-      </div>
-
-      <div style={{display:'grid',gridTemplateColumns:'220px 1fr',gap:16}}>
-        {/* Endpoint list */}
-        <div style={{background:'#fff',border:'1px solid #e8edf5',borderRadius:14,padding:14,boxShadow:'0 1px 4px rgba(0,0,0,.04)',height:'fit-content'}}>
-          <div style={{fontSize:10,fontWeight:700,color:'#a0aec0',letterSpacing:'.1em',marginBottom:10,paddingLeft:4}}>ENDPOINTS</div>
-          {endpoints.map(ep => (
-            <button key={ep.id} onClick={() => setActiveEndpoint(ep.id)} style={{
-              display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 10px',
-              borderRadius:9,border:'none',cursor:'pointer',marginBottom:3,textAlign:'left',
-              background: activeEndpoint === ep.id ? ep.bg : 'transparent',
-              transition:'all .15s',
-            }}>
-              <span style={{
-                fontSize:9,fontWeight:800,padding:'2px 6px',borderRadius:5,flexShrink:0,
-                background: ep.method === 'GET' ? '#eef9f0' : '#f0eeff',
-                color: ep.method === 'GET' ? '#28c76f' : '#6c5ce7',
-                border: `1px solid ${ep.method === 'GET' ? '#b8f0c8' : '#d6ceff'}`,
-              }}>{ep.method}</span>
-              <span style={{fontSize:13,fontWeight: activeEndpoint === ep.id ? 600 : 400,color: activeEndpoint === ep.id ? ep.color : '#4a5568'}}>{ep.label}</span>
-            </button>
-          ))}
-
-          {/* Auth note */}
-          <div style={{marginTop:14,padding:'12px 10px',background:'#fff3e0',border:'1px solid #ffe0b2',borderRadius:10,fontSize:11,color:'#92400e',lineHeight:1.6}}>
-            🔐 <strong>Auth required</strong> on all <code style={{fontFamily:'DM Mono,monospace'}}>/shield/*</code> endpoints.<br/>
-            Add header:<br/>
-            <code style={{fontFamily:'DM Mono,monospace',fontSize:10}}>Authorization: Bearer TOKEN</code>
-          </div>
-        </div>
-
-        {/* Endpoint detail */}
-        <div style={{display:'flex',flexDirection:'column',gap:14}}>
-          {/* Endpoint header */}
-          <div style={{background:'#fff',border:'1px solid #e8edf5',borderRadius:14,padding:'18px 22px',boxShadow:'0 1px 4px rgba(0,0,0,.04)'}}>
-            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
-              <span style={{
-                fontSize:11,fontWeight:800,padding:'4px 10px',borderRadius:7,
-                background: activeEp?.method === 'GET' ? '#eef9f0' : '#f0eeff',
-                color: activeEp?.method === 'GET' ? '#28c76f' : '#6c5ce7',
-                border: `1px solid ${activeEp?.method === 'GET' ? '#b8f0c8' : '#d6ceff'}`,
-              }}>{activeEp?.method}</span>
-              <code style={{fontFamily:'DM Mono,monospace',fontSize:13,color:'#1a2035',fontWeight:600}}>{activeEp?.path}</code>
-            </div>
-            <p style={{fontSize:13.5,color:'#4a5568',lineHeight:1.7,margin:0}}>{active?.description}</p>
-            {active?.warning && (
-              <div style={{marginTop:12,background:'#fff7ed',border:'1px solid #fed7aa',borderRadius:9,padding:'10px 14px',fontSize:12.5,color:'#9a3412',lineHeight:1.6}}>{active.warning}</div>
-            )}
-          </div>
-
-          {/* Request body */}
-          {active?.request && (
-            <div style={{background:'#fff',border:'1px solid #e8edf5',borderRadius:14,padding:'18px 22px',boxShadow:'0 1px 4px rgba(0,0,0,.04)'}}>
-              <div style={{fontSize:11,fontWeight:700,color:'#a0aec0',letterSpacing:'.08em',marginBottom:10}}>REQUEST BODY</div>
-              <div style={{background:'#1a2035',borderRadius:10,padding:'14px 16px'}}>
-                <pre style={{margin:0,fontFamily:'DM Mono,monospace',fontSize:12,color:'rgba(255,255,255,.85)',lineHeight:1.8,whiteSpace:'pre-wrap'}}>{active.request}</pre>
+// 2. Encrypt (with token)
+var encReq = HttpRequest.newBuilder()
+    .uri(URI.create(BASE + "/shield/encrypt"))
+    .header("Authorization", "Bearer " + token)
+    .header("Content-Type", "application/json")
+    .POST(HttpRequest.BodyPublishers.ofString(
+        "{\"plaintext\":\"Patient: John Doe\"}"))
+    .build();
+var encrypted = client.send(encReq, HttpResponse.BodyHandlers.ofString()).body();`}</pre>}
               </div>
             </div>
-          )}
-
-          {/* Response */}
-          <div style={{background:'#fff',border:'1px solid #e8edf5',borderRadius:14,padding:'18px 22px',boxShadow:'0 1px 4px rgba(0,0,0,.04)'}}>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
-              <div style={{fontSize:11,fontWeight:700,color:'#a0aec0',letterSpacing:'.08em'}}>RESPONSE</div>
-              <span style={{background:'#eef9f0',border:'1px solid #b8f0c8',borderRadius:6,padding:'2px 10px',fontSize:11,fontWeight:700,color:'#28c76f'}}>200 OK</span>
-            </div>
-            <div style={{background:'#1a2035',borderRadius:10,padding:'14px 16px'}}>
-              <pre style={{margin:0,fontFamily:'DM Mono,monospace',fontSize:12,color:'rgba(255,255,255,.85)',lineHeight:1.8,whiteSpace:'pre-wrap'}}>{active?.response}</pre>
-            </div>
           </div>
 
-          {/* Code examples */}
-          <div style={{background:'#fff',border:'1px solid #e8edf5',borderRadius:14,padding:'18px 22px',boxShadow:'0 1px 4px rgba(0,0,0,.04)'}}>
-            <div style={{fontSize:11,fontWeight:700,color:'#a0aec0',letterSpacing:'.08em',marginBottom:12}}>CODE EXAMPLES — FULL FLOW</div>
-            <div style={{display:'flex',gap:6,marginBottom:0}}>
-              {[['js','JavaScript'],['python','Python'],['php','PHP'],['java','Java']].map(([id,label]) => (
-                <button key={id} onClick={() => setActiveLang(id)} style={{
-                  padding:'7px 16px',borderRadius:'8px 8px 0 0',fontSize:12.5,fontWeight:600,cursor:'pointer',
-                  border:'1.5px solid',borderBottom:'none',transition:'all .15s',
-                  background: activeLang === id ? '#1a2035' : '#f8f9fb',
-                  color: activeLang === id ? 'rgba(255,255,255,.9)' : '#a0aec0',
-                  borderColor: activeLang === id ? '#1a2035' : '#e8edf5',
-                }}>{label}</button>
-              ))}
-            </div>
-            <div style={{background:'#1a2035',borderRadius:'0 10px 10px 10px',padding:'16px 18px'}}>
-              <pre style={{margin:0,fontFamily:'DM Mono,monospace',fontSize:12,color:'rgba(255,255,255,.85)',lineHeight:1.9,whiteSpace:'pre-wrap',overflowX:'auto'}}>{codeExamples[activeLang]}</pre>
-            </div>
+          {/* ERROR CODES */}
+          <div className="dp-doc-section" id="dp-errors">
+            <h2 style={{fontFamily:"'DM Sans',sans-serif",fontSize:19,fontWeight:800,color:'#1a2035',marginBottom:12,letterSpacing:'-.2px'}}>Error Codes</h2>
+            <table className="dp-param-table">
+              <thead><tr><th>Code</th><th>Meaning</th><th>Resolution</th></tr></thead>
+              <tbody>
+                <tr><td><span className="dp-p-name">400</span></td><td className="dp-p-desc">Bad Request — missing or invalid fields</td><td className="dp-p-desc">Check request body matches schema</td></tr>
+                <tr><td><span className="dp-p-name">401</span></td><td className="dp-p-desc">Unauthorized — missing or invalid token</td><td className="dp-p-desc">Re-login to get a fresh JWT</td></tr>
+                <tr><td><span className="dp-p-name">403</span></td><td className="dp-p-desc">Forbidden — insufficient permissions</td><td className="dp-p-desc">Use correct account credentials</td></tr>
+                <tr><td><span className="dp-p-name">429</span></td><td className="dp-p-desc">Rate limit exceeded</td><td className="dp-p-desc">Slow down requests; see rate limits below</td></tr>
+                <tr><td><span className="dp-p-name">500</span></td><td className="dp-p-desc">Internal server error</td><td className="dp-p-desc">Retry; contact support if persists</td></tr>
+              </tbody>
+            </table>
           </div>
 
-          {/* Error codes */}
-          <div style={{background:'#fff',border:'1px solid #e8edf5',borderRadius:14,padding:'18px 22px',boxShadow:'0 1px 4px rgba(0,0,0,.04)'}}>
-            <div style={{fontSize:11,fontWeight:700,color:'#a0aec0',letterSpacing:'.08em',marginBottom:12}}>ERROR CODES</div>
-            <div style={{display:'grid',gridTemplateColumns:'80px 120px 1fr',gap:0}}>
-              {[
-                ['401','Unauthorized','Missing or invalid Bearer token'],
-                ['400','Bad Request', 'Missing required field (e.g. plaintext)'],
-                ['429','Rate Limited','Too many failed login attempts (5 max)'],
-                ['404','Not Found',   'Verification code does not exist'],
-                ['500','Server Error','Internal error — check Railway logs'],
-              ].map(([code, name, desc], i) => (
-                <div key={code} style={{
-                  display:'contents',
-                }}>
-                  <div style={{padding:'10px 0',borderBottom:'1px solid #f1f5f9',fontFamily:'DM Mono,monospace',fontSize:12,fontWeight:700,color: code.startsWith('4') ? '#ea5455' : '#ff9f43'}}>{code}</div>
-                  <div style={{padding:'10px 0',borderBottom:'1px solid #f1f5f9',fontSize:12.5,fontWeight:600,color:'#1a2035'}}>{name}</div>
-                  <div style={{padding:'10px 0',borderBottom:'1px solid #f1f5f9',fontSize:12.5,color:'#a0aec0'}}>{desc}</div>
-                </div>
-              ))}
-            </div>
+          {/* RATE LIMITS */}
+          <div className="dp-doc-section" id="dp-rate-limits">
+            <h2 style={{fontFamily:"'DM Sans',sans-serif",fontSize:19,fontWeight:800,color:'#1a2035',marginBottom:12,letterSpacing:'-.2px'}}>Rate Limits</h2>
+            <table className="dp-param-table">
+              <thead><tr><th>Plan</th><th>Requests/minute</th><th>Requests/month</th></tr></thead>
+              <tbody>
+                <tr><td className="dp-p-desc">Starter (Free)</td><td className="dp-p-desc">60</td><td className="dp-p-desc">1,000</td></tr>
+                <tr><td className="dp-p-desc">Business</td><td className="dp-p-desc">300</td><td className="dp-p-desc">100,000</td></tr>
+                <tr><td className="dp-p-desc">Enterprise</td><td className="dp-p-desc">Unlimited</td><td className="dp-p-desc">Unlimited</td></tr>
+              </tbody>
+            </table>
+            <div className="dp-note-box"><span style={{flexShrink:0,fontSize:16}}>💡</span><div>Rate limit headers are included in every response: <span className="dp-inline-code">X-RateLimit-Limit</span>, <span className="dp-inline-code">X-RateLimit-Remaining</span>, and <span className="dp-inline-code">X-RateLimit-Reset</span>.</div></div>
           </div>
-        </div>
+
+        </main>
       </div>
     </div>
   );
 }
 
-// ── UPGRADE PANEL ─────────────────────────────────────────────────────────────
-function UpgradePanel({ C, userPlan }) {
-  const plans = [
-    {
-      id: 'starter',
-      name: 'Starter',
-      price: '$299',
-      period: '/month',
-      tag: null,
-      color: '#6c5ce7',
-      bg: '#f0eeff',
-      bdr: '#d6ceff',
-      btnBg: '#6c5ce7',
-      features: [
-        '10,000 API calls / month',
-        '3 entropy sources (BTC + ETH + Seismic)',
-        'Basic audit log',
-        'Public verification URLs',
-        'Email support',
-        '1 API key',
-      ],
-      notIncluded: ['Auto key rotation', 'Compliance reports', 'Dedicated entropy pool'],
-    },
-    {
-      id: 'professional',
-      name: 'Professional',
-      price: '$999',
-      period: '/month',
-      tag: 'Most Popular',
-      color: '#0984e3',
-      bg: '#eef4ff',
-      bdr: '#c2d8f8',
-      btnBg: '#0984e3',
-      features: [
-        'Unlimited API calls',
-        'All 4 entropy sources',
-        'Full compliance reports',
-        'Auto key rotation (24h)',
-        'Priority support',
-        '5 API keys',
-        'DPDP Act 2023 documentation',
-        'Usage analytics dashboard',
-      ],
-      notIncluded: ['Dedicated entropy pool', 'Custom entropy sources'],
-    },
-    {
-      id: 'enterprise',
-      name: 'Enterprise',
-      price: '$2,999',
-      period: '/month',
-      tag: 'Maximum Security',
-      color: '#ff9f43',
-      bg: '#fff3e0',
-      bdr: '#ffe0b2',
-      btnBg: '#ff9f43',
-      features: [
-        'Unlimited API calls',
-        'Dedicated entropy pool',
-        'Custom entropy sources',
-        'SLA guarantee (99.9%)',
-        'Legal compliance docs',
-        'Unlimited API keys',
-        'Custom key rotation schedule',
-        '24/7 dedicated support',
-        'On-premise deployment option',
-      ],
-      notIncluded: [],
-    },
-  ];
-
-  const currentPlan = (userPlan || 'free').toLowerCase();
+// ── UPGRADE PANEL — full pricing.js content ───────────────────────────────────
+function UpgradePanel({ userPlan }) {
+  const [annual, setAnnual] = useState(false);
 
   return (
     <div className="fadeUp">
+      <style>{`
+        .up-toggle-wrap{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:40px}
+        .up-toggle-label{font-size:14px;font-weight:600;color:#a0aec0}
+        .up-toggle-label.on{color:#1a2035}
+        .up-toggle{width:46px;height:25px;border-radius:100px;background:#1a2035;position:relative;cursor:pointer;transition:background .2s;border:none;outline:none}
+        .up-toggle-knob{position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;background:#fff;transition:transform .2s;pointer-events:none}
+        .up-toggle.annual .up-toggle-knob{transform:translateX(21px)}
+        .up-save-tag{background:#ede9fe;color:#8b5cf6;font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px}
+        .up-price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:48px}
+        .up-pc{background:#fff;border:1.5px solid #e5e7eb;border-radius:22px;padding:28px;box-shadow:0 1px 4px rgba(0,0,0,.04);transition:all .3s;position:relative;display:flex;flex-direction:column}
+        .up-pc:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.08)}
+        .up-pc.feat{background:#1a2035;border-color:transparent;box-shadow:0 8px 28px rgba(26,32,53,.2)}
+        .up-feat-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);white-space:nowrap;background:linear-gradient(135deg,#8b5cf6,#60a5fa);color:#fff;font-size:10.5px;font-weight:700;padding:4px 14px;border-radius:100px}
+        .up-pn{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#a0aec0;margin-bottom:14px}
+        .up-pc.feat .up-pn{color:rgba(255,255,255,.4)}
+        .up-pr{display:flex;align-items:baseline;gap:2px;margin-bottom:4px}
+        .up-pa{font-family:'DM Sans',sans-serif;font-size:44px;font-weight:900;color:#1a2035;letter-spacing:-2px;line-height:1}
+        .up-pc.feat .up-pa{color:#fff}
+        .up-pper{font-size:13px;color:#a0aec0}
+        .up-pc.feat .up-pper{color:rgba(255,255,255,.35)}
+        .up-pd{font-size:13px;color:#6b7280;margin:10px 0 20px;line-height:1.6}
+        .up-pc.feat .up-pd{color:rgba(255,255,255,.45)}
+        .up-pb{width:100%;padding:12px;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13.5px;font-weight:700;cursor:pointer;transition:all .22s;border:none}
+        .up-pb.dark{background:#1a2035;color:#fff}.up-pb.dark:hover{background:#111}
+        .up-pb.wh{background:#fff;color:#1a2035}.up-pb.wh:hover{background:#f5f5f5}
+        .up-pb.ol{background:transparent;color:#1a2035;border:1.5px solid #e5e7eb}.up-pb.ol:hover{border-color:#1a2035}
+        .up-pdiv{height:1px;background:#e5e7eb;margin:20px 0}.up-pc.feat .up-pdiv{background:rgba(255,255,255,.08)}
+        .up-pf{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:#1a2035;padding:10px 0;border-bottom:1px solid #e5e7eb}
+        .up-pf:last-child{border-bottom:none}
+        .up-pc.feat .up-pf{color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.07)}
+        .up-pfck{width:18px;height:18px;border-radius:5px;background:#d1fae5;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;margin-top:1px}
+        .up-pc.feat .up-pfck{background:rgba(139,92,246,.25)}
+        .up-pfx{width:18px;height:18px;border-radius:5px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;margin-top:1px;color:#d1d5db}
+        .up-compare{background:#fff;border:1.5px solid #e5e7eb;border-radius:18px;overflow:hidden;margin-bottom:48px}
+        .up-cf-head{display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr;padding:14px 22px;background:#f9fafb;border-bottom:1px solid #e5e7eb}
+        .up-cfh{font-size:11px;font-weight:700;color:#a0aec0;text-align:center;text-transform:uppercase;letter-spacing:.6px}
+        .up-cfh:first-child{text-align:left}
+        .up-cfh.hl{color:#1a2035}
+        .up-cf-row{display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr;padding:12px 22px;border-bottom:1px solid #e5e7eb;transition:background .15s}
+        .up-cf-row:last-child{border-bottom:none}.up-cf-row:hover{background:#f9fafb}
+        .up-cf-feat{font-size:13px;color:#1a2035;font-weight:500}
+        .up-cf-val{text-align:center;font-size:13px;font-weight:600;color:#a0aec0}
+        .up-cf-val.y{color:#28c76f}.up-cf-val.n{color:rgba(200,200,200,.6)}
+        .up-cf-group{padding:10px 22px;background:#f3f4f6;border-bottom:1px solid #e5e7eb}
+        .up-cfg-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#9ca3af}
+        .up-faq-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:32px}
+        .up-faq-item{background:#fff;border:1.5px solid #e5e7eb;border-radius:14px;padding:20px}
+        .up-fq{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;color:#1a2035;margin-bottom:7px}
+        .up-fa{font-size:12.5px;color:#6b7280;line-height:1.65}
+        @media(max-width:860px){.up-price-grid,.up-faq-grid{grid-template-columns:1fr}.up-cf-head,.up-cf-row{grid-template-columns:2fr 1fr 1fr}}
+      `}</style>
+
       {/* Header */}
       <div style={{textAlign:'center',marginBottom:32}}>
-        <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'#f0eeff',border:'1px solid #d6ceff',borderRadius:100,padding:'6px 16px',fontSize:12,fontWeight:700,color:'#6c5ce7',marginBottom:14}}>
+        <div style={{display:'inline-flex',alignItems:'center',gap:7,background:'#f0eeff',border:'1px solid #d6ceff',borderRadius:100,padding:'6px 16px',fontSize:12,fontWeight:700,color:'#6c5ce7',marginBottom:14}}>
           ⚡ Upgrade Your Plan
         </div>
-        <div style={{fontSize:28,fontWeight:800,color:'#1a2035',letterSpacing:'-1px',marginBottom:8}}>
-          Choose the right protection level
+        <div style={{fontSize:28,fontWeight:800,color:'#1a2035',letterSpacing:'-1px',marginBottom:8}}>Start free. Scale without surprises.</div>
+        <p style={{fontSize:14,color:'#a0aec0',maxWidth:460,margin:'0 auto',lineHeight:1.6}}>No hidden fees. No per-request traps. Simple, flat monthly pricing. <strong style={{color:'#1a2035'}}>Don't trust us — verify us.</strong></p>
+      </div>
+
+      {/* Toggle */}
+      <div className="up-toggle-wrap">
+        <span className={`up-toggle-label${!annual?' on':''}`}>Monthly</span>
+        <button className={`up-toggle${annual?' annual':''}`} onClick={()=>setAnnual(!annual)}>
+          <div className="up-toggle-knob"/>
+        </button>
+        <span className={`up-toggle-label${annual?' on':''}`}>Annual</span>
+        <span className="up-save-tag">Save 20%</span>
+      </div>
+
+      {/* Pricing cards */}
+      <div className="up-price-grid">
+        {/* Starter */}
+        <div className="up-pc">
+          <div className="up-pn">Starter</div>
+          <div className="up-pr"><div className="up-pa">$0</div><div className="up-pper">/month</div></div>
+          <p className="up-pd">For developers building and testing their integration.</p>
+          <button className="up-pb ol" onClick={()=>window.location.href='/register'}>Get started free</button>
+          <div className="up-pdiv"/>
+          <div>
+            {['1,000 API calls / month','1 encryption key','AES-256-GCM encryption','Full API access','Community support'].map(f=>(
+              <div key={f} className="up-pf"><div className="up-pfck">✓</div><span>{f}</span></div>
+            ))}
+            {['Usage analytics','Priority support'].map(f=>(
+              <div key={f} className="up-pf"><div className="up-pfx">×</div><span style={{color:'#a0aec0'}}>{f}</span></div>
+            ))}
+          </div>
         </div>
-        <div style={{fontSize:14,color:'#a0aec0',maxWidth:480,margin:'0 auto',lineHeight:1.6}}>
-          All plans include provably fair entropy, public verification URLs, and full audit trails. <strong style={{color:'#1a2035'}}>Don't trust us — verify us.</strong>
+
+        {/* Business — featured */}
+        <div className="up-pc feat">
+          <div className="up-feat-badge">✦ Most Popular</div>
+          <div className="up-pn">Business</div>
+          <div className="up-pr"><div className="up-pa">{annual?'$39':'$49'}</div><div className="up-pper">/month</div></div>
+          <p className="up-pd">Everything a growing team needs to ship securely.</p>
+          <button className="up-pb wh" onClick={()=>alert('Stripe integration coming soon! Contact hello@srashield.com to upgrade.')}>Start Business plan</button>
+          <div className="up-pdiv"/>
+          <div>
+            {['100,000 API calls / month','10 encryption keys','AES-256-GCM encryption','Usage analytics dashboard','Email support (24h SLA)','99.9% uptime SLA','Security compliance docs'].map(f=>(
+              <div key={f} className="up-pf"><div className="up-pfck">✓</div><span>{f}</span></div>
+            ))}
+          </div>
+        </div>
+
+        {/* Enterprise */}
+        <div className="up-pc">
+          <div className="up-pn">Enterprise</div>
+          <div className="up-pr"><div className="up-pa" style={{fontSize:'30px',letterSpacing:'-1px'}}>Custom</div></div>
+          <p className="up-pd">For organizations with specific compliance, scale, or SLA requirements.</p>
+          <button className="up-pb dark" onClick={()=>window.open('mailto:hello@srashield.com')}>Contact us</button>
+          <div className="up-pdiv"/>
+          <div>
+            {['Unlimited API calls','Unlimited keys','Dedicated support manager','Custom SLA + uptime guarantee','Full pen test security report','Private deployment option','Invoice billing'].map(f=>(
+              <div key={f} className="up-pf"><div className="up-pfck">✓</div><span>{f}</span></div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Plans grid */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:24}}>
-        {plans.map(plan => {
-          const isCurrent = currentPlan === plan.id || (currentPlan === 'free' && plan.id === 'starter');
-          return (
-            <div key={plan.id} style={{
-              background:'#fff',
-              border: plan.tag === 'Most Popular' ? `2px solid ${plan.color}` : '1px solid #e8edf5',
-              borderRadius:16,padding:'24px 22px',
-              boxShadow: plan.tag === 'Most Popular' ? `0 8px 28px rgba(9,132,227,.12)` : '0 1px 6px rgba(0,0,0,.04)',
-              position:'relative',display:'flex',flexDirection:'column',
-              transform: plan.tag === 'Most Popular' ? 'translateY(-4px)' : 'none',
-              transition:'transform .2s',
-            }}>
-              {plan.tag && (
-                <div style={{position:'absolute',top:-13,left:'50%',transform:'translateX(-50%)',background:plan.btnBg,color:'#fff',fontSize:10,fontWeight:800,padding:'4px 14px',borderRadius:100,letterSpacing:'.06em',whiteSpace:'nowrap'}}>
-                  {plan.tag}
-                </div>
-              )}
-
-              {/* Plan header */}
-              <div style={{marginBottom:20}}>
-                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
-                  <div style={{width:38,height:38,background:plan.bg,border:`1px solid ${plan.bdr}`,borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>
-                    {plan.id === 'starter' ? '🚀' : plan.id === 'professional' ? '⚡' : '🏆'}
-                  </div>
-                  <div style={{fontSize:16,fontWeight:700,color:'#1a2035'}}>{plan.name}</div>
-                </div>
-                <div style={{display:'flex',alignItems:'baseline',gap:4,marginBottom:6}}>
-                  <span style={{fontSize:36,fontWeight:800,color:plan.color,letterSpacing:-1}}>{plan.price}</span>
-                  <span style={{fontSize:14,color:'#a0aec0'}}>{plan.period}</span>
-                </div>
-              </div>
-
-              {/* Features */}
-              <div style={{flex:1,marginBottom:22}}>
-                {plan.features.map((f, i) => (
-                  <div key={i} style={{display:'flex',alignItems:'center',gap:9,marginBottom:9,fontSize:13,color:'#4a5568'}}>
-                    <span style={{color:'#28c76f',fontSize:14,flexShrink:0}}>✓</span>{f}
-                  </div>
-                ))}
-                {plan.notIncluded.map((f, i) => (
-                  <div key={i} style={{display:'flex',alignItems:'center',gap:9,marginBottom:9,fontSize:13,color:'#c9d0db'}}>
-                    <span style={{color:'#e2e8f0',fontSize:14,flexShrink:0}}>✗</span>{f}
-                  </div>
-                ))}
-              </div>
-
-              {/* CTA */}
-              <button
-                onClick={() => alert(`To upgrade to ${plan.name}, contact us at hello@sra.io or Stripe integration coming soon.`)}
-                style={{
-                  width:'100%',padding:'12px 0',borderRadius:10,fontSize:13.5,fontWeight:700,cursor:'pointer',
-                  background: isCurrent ? '#f1f5f9' : plan.btnBg,
-                  color: isCurrent ? '#a0aec0' : '#fff',
-                  border: isCurrent ? '1px solid #e2e8f0' : 'none',
-                  boxShadow: !isCurrent ? `0 4px 14px rgba(0,0,0,.15)` : 'none',
-                  transition:'all .15s',
-                }}>
-                {isCurrent ? '✓ Current Plan' : `Upgrade to ${plan.name} →`}
-              </button>
-            </div>
-          );
-        })}
+      {/* Compare table */}
+      <div style={{textAlign:'center',marginBottom:20}}>
+        <h2 style={{fontFamily:"'DM Sans',sans-serif",fontSize:22,fontWeight:800,color:'#1a2035',letterSpacing:'-.5px'}}>Compare all plans</h2>
+      </div>
+      <div className="up-compare">
+        <div className="up-cf-head">
+          <div className="up-cfh">Feature</div>
+          <div className="up-cfh">Starter</div>
+          <div className="up-cfh hl">Business</div>
+          <div className="up-cfh">Enterprise</div>
+        </div>
+        <div className="up-cf-group"><div className="up-cfg-label">Usage</div></div>
+        <div className="up-cf-row"><div className="up-cf-feat">API calls / month</div><div className="up-cf-val">1,000</div><div className="up-cf-val y">100,000</div><div className="up-cf-val">Unlimited</div></div>
+        <div className="up-cf-row"><div className="up-cf-feat">Encryption keys</div><div className="up-cf-val">1</div><div className="up-cf-val y">10</div><div className="up-cf-val">Unlimited</div></div>
+        <div className="up-cf-row"><div className="up-cf-feat">Requests per minute</div><div className="up-cf-val">60</div><div className="up-cf-val y">300</div><div className="up-cf-val">Unlimited</div></div>
+        <div className="up-cf-group"><div className="up-cfg-label">Security</div></div>
+        <div className="up-cf-row"><div className="up-cf-feat">AES-256-GCM Encryption</div><div className="up-cf-val y">✓</div><div className="up-cf-val y">✓</div><div className="up-cf-val y">✓</div></div>
+        <div className="up-cf-row"><div className="up-cf-feat">Multi-source entropy keys</div><div className="up-cf-val y">✓</div><div className="up-cf-val y">✓</div><div className="up-cf-val y">✓</div></div>
+        <div className="up-cf-row"><div className="up-cf-feat">Zero-knowledge architecture</div><div className="up-cf-val y">✓</div><div className="up-cf-val y">✓</div><div className="up-cf-val y">✓</div></div>
+        <div className="up-cf-row"><div className="up-cf-feat">Pen test security report</div><div className="up-cf-val n">—</div><div className="up-cf-val y">✓</div><div className="up-cf-val y">✓</div></div>
+        <div className="up-cf-group"><div className="up-cfg-label">Support</div></div>
+        <div className="up-cf-row"><div className="up-cf-feat">Community support</div><div className="up-cf-val y">✓</div><div className="up-cf-val y">✓</div><div className="up-cf-val y">✓</div></div>
+        <div className="up-cf-row"><div className="up-cf-feat">Email support (24h SLA)</div><div className="up-cf-val n">—</div><div className="up-cf-val y">✓</div><div className="up-cf-val y">✓</div></div>
+        <div className="up-cf-row"><div className="up-cf-feat">Dedicated support manager</div><div className="up-cf-val n">—</div><div className="up-cf-val n">—</div><div className="up-cf-val y">✓</div></div>
+        <div className="up-cf-group"><div className="up-cfg-label">Compliance</div></div>
+        <div className="up-cf-row"><div className="up-cf-feat">HIPAA compliance docs</div><div className="up-cf-val n">—</div><div className="up-cf-val y">✓</div><div className="up-cf-val y">✓</div></div>
+        <div className="up-cf-row"><div className="up-cf-feat">99.9% uptime SLA</div><div className="up-cf-val n">—</div><div className="up-cf-val y">✓</div><div className="up-cf-val y">✓</div></div>
+        <div className="up-cf-row"><div className="up-cf-feat">Invoice billing</div><div className="up-cf-val n">—</div><div className="up-cf-val n">—</div><div className="up-cf-val y">✓</div></div>
       </div>
 
-      {/* FAQ / Info strip */}
-      <div style={{background:'#fff',border:'1px solid #e8edf5',borderRadius:14,padding:'22px 26px',boxShadow:'0 1px 4px rgba(0,0,0,.04)'}}>
-        <div style={{fontSize:14,fontWeight:700,color:'#1a2035',marginBottom:18}}>Common Questions</div>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:18}}>
-          {[
-            ['What happens if I exceed my limit?', 'On Starter, API calls are blocked at 100%. Professional and Enterprise have unlimited calls — no interruptions.'],
-            ['Can I cancel anytime?', 'Yes. Cancel before your next billing date and you keep access until the period ends.'],
-            ['Is there a free trial?', 'New accounts start on Free tier with limited calls so you can test before committing.'],
-            ['How does billing work?', 'Monthly recurring via Stripe. Invoice sent automatically. Upgrade or downgrade anytime.'],
-          ].map(([q, a], i) => (
-            <div key={i}>
-              <div style={{fontSize:13,fontWeight:600,color:'#1a2035',marginBottom:5}}>{q}</div>
-              <div style={{fontSize:12.5,color:'#a0aec0',lineHeight:1.6}}>{a}</div>
-            </div>
-          ))}
+      {/* FAQ */}
+      <div style={{textAlign:'center',marginBottom:8}}>
+        <div style={{display:'inline-flex',alignItems:'center',gap:7,padding:'5px 13px',borderRadius:100,background:'#ede9fe',border:'1px solid rgba(139,92,246,.2)',fontSize:12,fontWeight:700,color:'#8b5cf6',marginBottom:10}}>❓ FAQ</div>
+        <h2 style={{fontFamily:"'DM Sans',sans-serif",fontSize:22,fontWeight:800,color:'#1a2035',letterSpacing:'-.5px'}}>Common questions</h2>
+      </div>
+      <div className="up-faq-grid">
+        {[
+          ['Do I need a credit card to start?','No. The Starter plan is completely free with no credit card required. Upgrade only when you need more calls.'],
+          ['What happens if I exceed my plan limits?','API calls return a 429 error after the limit. We\'ll email you before you hit the limit so you can upgrade without interruption.'],
+          ['Can I cancel anytime?','Yes. No long-term contracts. Cancel or downgrade from your account settings. You keep access until the end of your billing period.'],
+          ['Is my data stored on SRA Shield servers?','Never. Your plaintext is processed in memory and immediately discarded. We cannot access your data — zero-knowledge by design.'],
+          ['Does pricing include VAT/GST?','Prices shown are exclusive of taxes. Applicable VAT/GST will be calculated at checkout based on your billing address.'],
+          ['Is there a discount for annual billing?','Yes. Annual billing saves you 20% — equivalent to getting 2.4 months free compared to monthly billing.'],
+        ].map(([q,a])=>(
+          <div key={q} className="up-faq-item">
+            <div className="up-fq">{q}</div>
+            <div className="up-fa">{a}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA strip */}
+      <div style={{marginTop:32,background:'#1a2035',borderRadius:16,padding:'24px 28px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,flexWrap:'wrap'}}>
+        <div>
+          <div style={{fontSize:15,fontWeight:700,color:'#fff',marginBottom:4}}>Need Enterprise or a custom quote?</div>
+          <div style={{fontSize:13,color:'rgba(255,255,255,.45)'}}>Talk to us directly and we'll build a plan that fits.</div>
         </div>
-        <div style={{marginTop:18,paddingTop:18,borderTop:'1px solid #f1f5f9',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-          <div style={{fontSize:13,color:'#4a5568'}}>Need Enterprise or a custom quote? <strong>Talk to us directly.</strong></div>
-          <button onClick={() => window.open('mailto:hello@sra.io')} style={{background:'linear-gradient(135deg,#6c5ce7,#4338ca)',color:'#fff',border:'none',borderRadius:9,padding:'9px 20px',fontSize:13,fontWeight:600,cursor:'pointer',boxShadow:'0 4px 12px rgba(108,92,231,.3)'}}>
-            Contact Sales →
-          </button>
-        </div>
+        <button onClick={()=>window.open('mailto:hello@srashield.com')} style={{background:'linear-gradient(135deg,#6c5ce7,#4338ca)',color:'#fff',border:'none',borderRadius:10,padding:'11px 22px',fontSize:13.5,fontWeight:700,cursor:'pointer',boxShadow:'0 4px 14px rgba(108,92,231,.35)',whiteSpace:'nowrap'}}>
+          Contact Sales →
+        </button>
       </div>
     </div>
   );
@@ -751,7 +878,6 @@ export default function Dashboard() {
   const userEmail = user?.email || '';
   const userPlan  = user?.plan  || 'Starter';
 
-  // ── ALL NAV ITEMS (main + account) ──────────────────────────────────────────
   const navMain = [
     { id: 'overview', icon: '▦', label: 'Overview' },
     { id: 'keys',     icon: '⚿', label: 'My Keys' },
@@ -762,7 +888,6 @@ export default function Dashboard() {
     { id: 'docs',    icon: '☰', label: 'Documentation' },
     { id: 'upgrade', icon: '↑', label: 'Upgrade Plan'  },
   ];
-  // Combined for topbar title lookup
   const allNav = [...navMain, ...navAccount];
 
   const C = {
@@ -821,7 +946,6 @@ export default function Dashboard() {
           </div>
 
           <div style={{flex:1,overflowY:'auto',padding:'14px 10px'}}>
-            {/* MAIN nav */}
             <div style={{fontSize:9.5,fontWeight:700,color:'#3d5080',letterSpacing:'.1em',padding:'0 6px',marginBottom:6}}>MAIN</div>
             {navMain.map(n => (
               <button key={n.id} className="nav-btn" onClick={() => setActiveNav(n.id)} style={{
@@ -834,7 +958,6 @@ export default function Dashboard() {
               }}><span style={{fontSize:14}}>{n.icon}</span>{n.label}</button>
             ))}
 
-            {/* ACCOUNT nav — NOW WIRED UP ✅ */}
             <div style={{fontSize:9.5,fontWeight:700,color:'#3d5080',letterSpacing:'.1em',padding:'0 6px',margin:'18px 0 6px'}}>ACCOUNT</div>
             {navAccount.map(n => (
               <button key={n.id} className="nav-btn" onClick={() => setActiveNav(n.id)} style={{
@@ -848,7 +971,6 @@ export default function Dashboard() {
             ))}
           </div>
 
-          {/* User footer */}
           <div style={{padding:'12px 12px',borderTop:`1px solid ${C.sidebarBorder}`,display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
             <div style={{width:32,height:32,borderRadius:'50%',flexShrink:0,background:'linear-gradient(135deg,#6c5ce7,#0984e3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'#fff'}}>{userName[0].toUpperCase()}</div>
             <div style={{flex:1,minWidth:0}}>
@@ -864,7 +986,6 @@ export default function Dashboard() {
           {/* Topbar */}
           <div style={{background:C.topBg,borderBottom:`1px solid ${C.topBorder}`,padding:'0 28px',height:60,display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0,boxShadow:'0 1px 4px rgba(0,0,0,.04)'}}>
             <div>
-              {/* ✅ Fixed: uses allNav so docs/upgrade titles resolve */}
               <div style={{fontSize:18,fontWeight:700,color:C.titleTxt,letterSpacing:'-.3px'}}>{allNav.find(n=>n.id===activeNav)?.label||'Overview'}</div>
               <div style={{fontSize:12,color:C.mutedTxt,marginTop:1}}>Welcome back, {userName}</div>
             </div>
@@ -1064,7 +1185,6 @@ export default function Dashboard() {
                     </div>
                   ))}
                 </div>
-
                 <div style={{background:C.cardBg,border:`1px solid ${C.cardBorder}`,borderRadius:14,padding:22,boxShadow:C.cardShadow}}>
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
                     <div style={{fontSize:14,fontWeight:700,color:C.titleTxt}}>API Call History</div>
@@ -1101,10 +1221,10 @@ export default function Dashboard() {
             )}
 
             {/* ── DOCUMENTATION ─────────────────────────────────────────── */}
-            {activeNav==='docs' && <DocsPanel C={C} />}
+            {activeNav==='docs' && <DocsPanel />}
 
             {/* ── UPGRADE PLAN ──────────────────────────────────────────── */}
-            {activeNav==='upgrade' && <UpgradePanel C={C} userPlan={userPlan} />}
+            {activeNav==='upgrade' && <UpgradePanel userPlan={userPlan} />}
 
           </div>
         </div>
