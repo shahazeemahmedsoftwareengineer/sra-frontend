@@ -783,7 +783,8 @@ export default function Dashboard() {
   const [user, setUser]             = useState(null);
   const [mounted, setMounted]       = useState(false);
   const [activeNav, setActiveNav]   = useState('overview');
-  const [keys, setKeys]             = useState([{ id: 1, label: 'Key 1', status: 'Active', created: 'Mar 10', value: '' }]);
+  const [keys, setKeys]             = useState([]);
+  const [keysLoading, setKeysLoading] = useState(true);
   const [genLoading, setGenLoading] = useState(false);
   const [encInput, setEncInput]     = useState('');
   const [decInput, setDecInput]     = useState('');
@@ -802,7 +803,31 @@ export default function Dashboard() {
     setMounted(true);
     fetchUsage();
     fetchActivity();
+    fetchKeys();
   }, []);
+
+  const fetchKeys = async () => {
+    setKeysLoading(true);
+    try {
+      const res  = await fetch(`${API}/api/v1/shield/keys/audit`, {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      const data = await res.json();
+      if (data?.data?.keys) {
+        setKeys(data.data.keys.map((k, i) => ({
+          id:      k.id,
+          label:   `Key ${i + 1}`,
+          status:  'Active',
+          created: k.createdAt
+            ? new Date(k.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            : 'Unknown',
+          value:   '',   // zero-knowledge: backend never returns actual key after generation
+          code:    k.verificationCode || '',
+        })));
+      }
+    } catch (e) { console.error(e); }
+    setKeysLoading(false);
+  };
 
   const fetchUsage = async () => {
     setUsageLoading(true);
@@ -842,9 +867,27 @@ export default function Dashboard() {
       const key  = data?.data?.encryptionKey || data?.encryptionKey || '';
       const code = data?.data?.verificationCode || data?.verificationCode || '';
       if (key) {
-        setKeys(prev => [...prev, { id: Date.now(), label: `Key ${prev.length + 1}`, status: 'Active', created: 'Today', value: key, code }]);
+        // Show the new key value temporarily (only time it's ever visible — zero knowledge)
+        // Then refresh the full list from backend so it persists correctly
+        setKeys(prev => {
+          const newIndex = prev.length + 1;
+          return [...prev, {
+            id:      Date.now(),
+            label:   `Key ${newIndex}`,
+            status:  'Active',
+            created: 'Today',
+            value:   key,   // shown ONCE right now — user must copy immediately
+            code,
+            isNew:   true,  // flag to show "copy now" warning
+          }];
+        });
         await fetchUsage();
         await fetchActivity();
+        // Refresh keys list from backend after 3 seconds
+        // (keeps new key visible with value for 3s, then replaces with backend list)
+        setTimeout(() => fetchKeys(), 3000);
+      } else {
+        alert('Key generation failed. Please try again.');
       }
     } catch (e) { console.error(e); }
     setGenLoading(false);
@@ -1030,8 +1073,7 @@ export default function Dashboard() {
                 <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:16}}>
                   {[
                     {label:'Calls Used',     value: usage?.callsUsed ?? 0,       sub:'This month',         icon:'⚡', bg:'#fff3e0', bdr:'#ffe0b2'},
-                    {label:'Enc. Keys Active', value: keys.filter(k=>k.status==='Active').length, sub:'AES-256 encryption keys', icon:'⚿', bg:'#eef9f0', bdr:'#b8f0c8'},
-                    {label:'Days to Reset',  value: usage?.daysUntilReset ?? 30,  sub: usage?.resetDate ?? '', icon:'📅', bg:'#eef4ff', bdr:'#c2d8f8'},
+                    {label:'Enc. Keys Active', value: keys.filter(k=>k.status==='Active').length, sub:'AES-256 encryption keys', icon:'⚿', bg:'#eef9f0', bdr:'#b8f0c8'},                    {label:'Days to Reset',  value: usage?.daysUntilReset ?? 30,  sub: usage?.resetDate ?? '', icon:'📅', bg:'#eef4ff', bdr:'#c2d8f8'},
                   ].map((s,i)=>(
                     <div key={i} style={{background:s.bg,border:`1px solid ${s.bdr}`,borderRadius:14,padding:'20px 22px',boxShadow:C.cardShadow}}>
                       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
@@ -1153,34 +1195,113 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </div>
+
                 <div style={{background:'#fff8ec',border:`1px solid #ffe0b2`,borderRadius:14,padding:22,boxShadow:'0 1px 6px rgba(255,159,67,.1)'}}>
-                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18}}>
-                  <div style={{fontSize:14,fontWeight:700,color:'#1a2035'}}>Encryption Keys</div>
-                  <button className="gen-btn" onClick={handleGenKey} disabled={genLoading} style={{background:'#f0eeff',border:'1px solid #d6ceff',borderRadius:8,padding:'7px 15px',fontSize:12,fontWeight:600,color:'#6c5ce7',transition:'all .15s'}}>
-                    {genLoading?'⏳ Generating…':'+ Generate Enc. Key'}
-                  </button>
-                </div>
-                {keys.map((k,i)=>(
-                  <div key={k.id} style={{background:'#f8f9fb',border:`1px solid ${C.cardBorder}`,borderRadius:12,padding:'16px 18px',marginBottom:i<keys.length-1?10:0}}>
-                    <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12}}>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:k.value?10:0,flexWrap:'wrap'}}>
-                          <span style={{fontSize:16}}>⚿</span>
-                          <span style={{fontSize:14,fontWeight:600,color:C.titleTxt}}>{k.label}</span>
-                          <span style={{background:C.greenBg,color:C.green,border:`1px solid ${C.greenBdr}`,fontSize:11,fontWeight:700,padding:'2px 9px',borderRadius:100}}>{k.status}</span>
-                          <span style={{fontSize:11.5,color:C.mutedTxt}}>{k.created}</span>
-                        </div>
-                        {k.value&&<div style={{background:'#fff',border:'1px solid #d6ceff',borderRadius:8,padding:'10px 12px',fontFamily:'DM Mono,monospace',fontSize:11,color:'#6c5ce7',wordBreak:'break-all',lineHeight:1.7}}>{k.value}</div>}
-                        {k.code&&<div style={{fontSize:12,color:C.bodyTxt,marginTop:8}}>Verification: <span style={{color:'#6c5ce7',fontWeight:600}}>{k.code}</span></div>}
-                      </div>
-                      <div style={{display:'flex',gap:8,flexShrink:0}}>
-                        {k.value&&<button className="copy-btn" onClick={()=>copyText(k.value,k.id)} style={{background:'#f0eeff',border:'1px solid #d6ceff',borderRadius:7,padding:'6px 13px',fontSize:12,fontWeight:600,color:'#6c5ce7',transition:'all .15s'}}>{copied===k.id?'✓ Copied':'Copy'}</button>}
-                        <button className="del-btn" style={{background:C.redBg,border:`1px solid ${C.redBdr}`,color:C.red,borderRadius:7,padding:'6px 13px',fontSize:12,fontWeight:600,transition:'all .15s'}}>Delete</button>
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18}}>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:700,color:'#1a2035'}}>Encryption Keys</div>
+                      <div style={{fontSize:11.5,color:'#a0aec0',marginTop:2}}>
+                        {keysLoading ? 'Loading…' : `${keys.length} key${keys.length !== 1 ? 's' : ''} in your account`}
                       </div>
                     </div>
+                    <button className="gen-btn" onClick={handleGenKey} disabled={genLoading} style={{background:'#f0eeff',border:'1px solid #d6ceff',borderRadius:8,padding:'7px 15px',fontSize:12,fontWeight:600,color:'#6c5ce7',transition:'all .15s'}}>
+                      {genLoading?'⏳ Generating…':'+ Generate Enc. Key'}
+                    </button>
                   </div>
-                ))}
-                </div>{/* end inner card */}
+
+                  {/* Loading state */}
+                  {keysLoading && (
+                    <div style={{textAlign:'center',padding:'32px 0',color:'#a0aec0',fontSize:13}}>
+                      Loading your keys…
+                    </div>
+                  )}
+
+                  {/* No keys yet */}
+                  {!keysLoading && keys.length === 0 && (
+                    <div style={{textAlign:'center',padding:'32px 0'}}>
+                      <div style={{fontSize:32,marginBottom:12}}>⚿</div>
+                      <div style={{fontSize:14,fontWeight:600,color:'#1a2035',marginBottom:6}}>No encryption keys yet</div>
+                      <div style={{fontSize:13,color:'#a0aec0',marginBottom:16}}>Generate your first key to start encrypting data.</div>
+                      <button className="gen-btn" onClick={handleGenKey} disabled={genLoading}
+                        style={{background:'linear-gradient(135deg,#6c5ce7,#4338ca)',border:'none',borderRadius:10,padding:'11px 22px',fontSize:13,fontWeight:600,color:'#fff',cursor:'pointer'}}>
+                        {genLoading?'⏳ Generating…':'Generate First Key →'}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Keys list */}
+                  {!keysLoading && keys.map((k,i)=>(
+                    <div key={k.id} style={{background:'#f8f9fb',border:`1px solid ${k.isNew ? '#d6ceff' : C.cardBorder}`,borderRadius:12,padding:'16px 18px',marginBottom:i<keys.length-1?10:0,
+                      boxShadow: k.isNew ? '0 0 0 2px rgba(108,92,231,.2)' : 'none'}}>
+
+                      {/* "Copy now" warning for newly generated key */}
+                      {k.isNew && k.value && (
+                        <div style={{background:'#fff7ed',border:'1px solid #fed7aa',borderRadius:9,padding:'10px 14px',marginBottom:12,display:'flex',alignItems:'flex-start',gap:10}}>
+                          <span style={{fontSize:18,flexShrink:0}}>⚠️</span>
+                          <div>
+                            <div style={{fontSize:12.5,fontWeight:700,color:'#ea580c',marginBottom:2}}>Copy this key RIGHT NOW — it will never be shown again</div>
+                            <div style={{fontSize:12,color:'#9a3412',lineHeight:1.5}}>SRA Shield uses zero-knowledge architecture. After you leave this page or refresh, the actual key value disappears forever. Store it in your <code style={{background:'#fef3c7',padding:'1px 4px',borderRadius:3,fontFamily:'monospace',fontSize:11}}>SRA_ENC_KEY</code> environment variable immediately.</div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12}}>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:k.value?10:6,flexWrap:'wrap'}}>
+                            <span style={{fontSize:16}}>⚿</span>
+                            <span style={{fontSize:14,fontWeight:600,color:C.titleTxt}}>{k.label}</span>
+                            <span style={{background:C.greenBg,color:C.green,border:`1px solid ${C.greenBdr}`,fontSize:11,fontWeight:700,padding:'2px 9px',borderRadius:100}}>{k.status}</span>
+                            <span style={{fontSize:11.5,color:C.mutedTxt}}>{k.created}</span>
+                            {k.isNew && <span style={{background:'#f0eeff',color:'#6c5ce7',border:'1px solid #d6ceff',fontSize:10.5,fontWeight:700,padding:'2px 8px',borderRadius:100}}>NEW</span>}
+                          </div>
+
+                          {/* Actual key value — shown only right after generation */}
+                          {k.value ? (
+                            <div style={{background:'#fff',border:'1.5px solid #d6ceff',borderRadius:8,padding:'10px 12px',fontFamily:'DM Mono,monospace',fontSize:11,color:'#6c5ce7',wordBreak:'break-all',lineHeight:1.7,marginBottom:8}}>
+                              {k.value}
+                            </div>
+                          ) : (
+                            <div style={{background:'#f3f4f6',border:'1px solid #e5e7eb',borderRadius:8,padding:'8px 12px',fontSize:11.5,color:'#9ca3af',marginBottom:8,display:'flex',alignItems:'center',gap:8}}>
+                              <span>🔒</span>
+                              <span>Key value hidden — zero-knowledge architecture. Copy it when first generated.</span>
+                            </div>
+                          )}
+
+                          {/* Verification code */}
+                          {k.code && (
+                            <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                              <span style={{fontSize:11.5,color:C.bodyTxt,fontWeight:500}}>Verification:</span>
+                              <a href={`/shield/verify/${k.code}`} target="_blank" rel="noopener noreferrer"
+                                style={{color:'#6c5ce7',fontWeight:700,fontSize:12,fontFamily:'DM Mono,monospace',textDecoration:'none',background:'#f0eeff',padding:'3px 10px',borderRadius:6,border:'1px solid #d6ceff'}}>
+                                {k.code}
+                              </a>
+                              <span style={{fontSize:11,color:'#a0aec0'}}>← share with compliance team</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div style={{display:'flex',flexDirection:'column',gap:7,flexShrink:0}}>
+                          {k.value && (
+                            <button className="copy-btn" onClick={()=>copyText(k.value, k.id)}
+                              style={{background:'#f0eeff',border:'1px solid #d6ceff',borderRadius:7,padding:'7px 14px',fontSize:12,fontWeight:700,color:'#6c5ce7',transition:'all .15s'}}>
+                              {copied===k.id ? '✓ Copied!' : 'Copy Key'}
+                            </button>
+                          )}
+                          {k.code && (
+                            <button className="copy-btn" onClick={()=>copyText(k.code, `code-${k.id}`)}
+                              style={{background:'#f8f9fb',border:'1px solid #e5e7eb',borderRadius:7,padding:'7px 14px',fontSize:12,fontWeight:600,color:'#4a5568',transition:'all .15s'}}>
+                              {copied===`code-${k.id}` ? '✓ Copied!' : 'Copy Code'}
+                            </button>
+                          )}
+                          <button className="del-btn"
+                            style={{background:C.redBg,border:`1px solid ${C.redBdr}`,color:C.red,borderRadius:7,padding:'7px 14px',fontSize:12,fontWeight:600,transition:'all .15s'}}>
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
