@@ -36,13 +36,16 @@ export default function VerifyPage() {
   };
 
   const cleanBTC = (raw) => {
-    // "BTCUSDT-65618.00" → "$65,618.00"
+    // handles: "BTCUSDT-71471.61000000-4317758516042257" → "$71,471.61"
     if (!raw) return '—';
-    const num = parseFloat(raw.replace(/[^0-9.]/g, ''));
-    return isNaN(num) ? raw : `$${num.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    // split by - and find the first valid float after removing BTCUSDT prefix
+    const parts = raw.replace('BTCUSDT', '').split('-').filter(Boolean);
+    const price = parts.find(p => !isNaN(parseFloat(p)) && parseFloat(p) > 100);
+    const num = price ? parseFloat(price) : null;
+    return num ? `$${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : raw;
   };
 
-  const shortHash = (h) => h ? h.slice(0, 12) + '...' : '—';
+  const shortHash = (h) => h ? h.slice(0, 16) + '...' : null;
 
   // ── entropy sources config ───────────────────────────────────────────────
   const getSources = (d) => [
@@ -53,46 +56,56 @@ export default function VerifyPage() {
       label: 'Bitcoin Price',
       sublabel: 'Live market price at moment of generation',
       value: cleanBTC(d?.btcPrice),
-      raw: d?.btcPrice,
+      used: !!d?.btcPrice,
       verifyUrl: 'https://coinmarketcap.com/currencies/bitcoin/historical-data/',
       verifyLabel: 'Verify on CoinMarketCap →',
-      desc: 'Bitcoin\'s price is determined by millions of traders globally. Impossible to predict to the cent in advance.',
+      desc: 'Bitcoin\'s price is determined by millions of global traders. Impossible to predict to the cent in advance.',
     },
     {
       icon: 'Ξ',
-      iconBg: '#f0eeff',
-      iconColor: '#6c5ce7',
+      iconBg: d?.ethBlockHash ? '#f0eeff' : '#f9fafb',
+      iconColor: d?.ethBlockHash ? '#6c5ce7' : '#9ca3af',
       label: 'Ethereum Block Hash',
-      sublabel: 'Latest block hash at moment of generation',
+      sublabel: d?.ethBlockHash ? 'Block hash at moment of generation' : 'Not used in Fast tier',
       value: shortHash(d?.ethBlockHash),
-      raw: d?.ethBlockHash,
-      verifyUrl: d?.ethBlockHash ? `https://etherscan.io/search?q=${d.ethBlockHash}` : 'https://etherscan.io',
-      verifyLabel: 'Verify on Etherscan →',
-      desc: 'Each Ethereum block hash is computed from millions of transactions. Cryptographically unpredictable.',
+      used: !!d?.ethBlockHash,
+      verifyUrl: d?.ethBlockHash ? `https://etherscan.io/search?q=${d.ethBlockHash}` : null,
+      verifyLabel: d?.ethBlockHash ? 'Verify on Etherscan →' : null,
+      desc: d?.ethBlockHash
+        ? 'Each Ethereum block hash comes from millions of transactions. Cryptographically unpredictable.'
+        : 'Ethereum block hash is included in Standard and Enterprise tiers for additional entropy strength.',
     },
     {
       icon: '🌍',
-      iconBg: '#eef9f0',
-      iconColor: '#28c76f',
+      iconBg: d?.seismicData ? '#eef9f0' : '#f9fafb',
+      iconColor: d?.seismicData ? '#28c76f' : '#9ca3af',
       label: 'USGS Seismic Data',
-      sublabel: 'Real-time earthquake sensor reading',
-      value: d?.seismicData || '—',
-      raw: d?.seismicData,
-      verifyUrl: 'https://earthquake.usgs.gov/earthquakes/map/',
-      verifyLabel: 'Verify on USGS →',
-      desc: 'Seismic activity from the US Geological Survey. Earth\'s crust moves in patterns no computer can predict.',
+      sublabel: d?.seismicData ? 'Real-time earthquake sensor reading' : 'Not used in Fast tier',
+      value: d?.seismicData || null,
+      used: !!d?.seismicData,
+      verifyUrl: d?.seismicData ? 'https://earthquake.usgs.gov/earthquakes/map/' : null,
+      verifyLabel: d?.seismicData ? 'Verify on USGS →' : null,
+      desc: d?.seismicData
+        ? 'Live seismic sensor data from the US Geological Survey. Earth\'s movement cannot be predicted.'
+        : 'USGS seismic data is included in Standard and Enterprise tiers for additional entropy strength.',
     },
     {
       icon: '⏱',
       iconBg: '#eef4ff',
       iconColor: '#0984e3',
       label: 'Server Timing',
-      sublabel: 'High-precision server nanosecond timestamp',
-      value: d?.serverTiming ? `${Number(d.serverTiming).toLocaleString()} ns` : '—',
-      raw: d?.serverTiming,
+      sublabel: 'High-precision nanosecond timing samples',
+      value: d?.serverTiming
+        ? (() => {
+            const samples = d.serverTiming.split('-').filter(Boolean);
+            const avg = samples.reduce((a,b) => a + Number(b), 0) / samples.length;
+            return `${samples.length} samples · avg ${Math.round(avg).toLocaleString()} ns`;
+          })()
+        : '—',
+      used: !!d?.serverTiming,
       verifyUrl: null,
       verifyLabel: null,
-      desc: 'Sub-millisecond server process timing. Captures hardware-level noise impossible to reproduce exactly.',
+      desc: 'Multiple nanosecond-precision hardware timing samples. The exact sequence is impossible to predict or reproduce.',
     },
   ];
 
@@ -324,7 +337,7 @@ export default function VerifyPage() {
                   </div>
                   <div className="v-code-row">
                     <div className="v-code">{data.verificationCode || code}</div>
-                    <div className="v-timestamp">🕐 {formatDate(data.createdAt)}</div>
+                    <div className="v-timestamp">🕐 {formatDate(data.issuedAt || data.createdAt)}</div>
                     <span style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:12,
                       fontWeight:700,padding:'4px 11px',borderRadius:100,
                       background:'#D1FAE5',color:'#059669',border:'1px solid #A7F3D0'}}>
@@ -348,10 +361,30 @@ export default function VerifyPage() {
                         <div className="v-src-sub">{src.sublabel}</div>
                       </div>
                     </div>
-                    <div className="v-src-value">{src.value}</div>
+                    {/* Value — show actual value or "not used" */}
+                    {src.used && src.value ? (
+                      <div className="v-src-value">{src.value}</div>
+                    ) : !src.used ? (
+                      <div style={{background:'#f3f4f6',border:'1px solid #e5e7eb',borderRadius:9,
+                        padding:'10px 14px',fontSize:12,color:'#9ca3af',marginBottom:10,
+                        display:'flex',alignItems:'center',gap:8}}>
+                        <span>—</span>
+                        <span>Not used in <strong style={{color:'#6b7280'}}>Fast</strong> tier · Available in Standard & Enterprise</span>
+                      </div>
+                    ) : (
+                      <div className="v-src-value">—</div>
+                    )}
                     <div className="v-src-desc">{src.desc}</div>
                     <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}>
-                      <span className="v-src-badge">✓ Captured at generation</span>
+                      {src.used ? (
+                        <span className="v-src-badge">✓ Captured at generation</span>
+                      ) : (
+                        <span style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:10.5,
+                          fontWeight:700,padding:'2px 8px',borderRadius:100,
+                          background:'#F3F4F6',color:'#9CA3AF',border:'1px solid #E5E7EB'}}>
+                          — Not in this tier
+                        </span>
+                      )}
                       {src.verifyUrl && (
                         <a href={src.verifyUrl} target="_blank" rel="noopener noreferrer" className="v-src-link">
                           {src.verifyLabel}
@@ -432,19 +465,23 @@ export default function VerifyPage() {
                 {[
                   {
                     step:'1',
-                    text: <><strong style={{color:'#1A1A1A'}}>Check the Bitcoin price</strong> — visit CoinMarketCap or CoinGecko historical data. Search for the date above and confirm the BTC price matches <strong style={{color:'#1A1A1A'}}>{cleanBTC(data.btcPrice)}</strong>.</>
+                    text: <><strong>Check the Bitcoin price</strong> — visit CoinMarketCap or CoinGecko historical data. Search for <strong>{formatDate(data.issuedAt || data.createdAt)}</strong> and confirm the BTC price was <strong>{cleanBTC(data.btcPrice)}</strong>.</>
                   },
                   {
                     step:'2',
-                    text: <><strong style={{color:'#1A1A1A'}}>Check the Ethereum block</strong> — visit Etherscan.io and search for block hash <strong style={{color:'#1A1A1A',fontFamily:'monospace',fontSize:12}}>{data.ethBlockHash}</strong>. Confirm it exists and was mined around the timestamp above.</>
+                    text: data.ethBlockHash
+                      ? <><strong>Check the Ethereum block</strong> — visit Etherscan.io and search for block hash <strong style={{fontFamily:'monospace',fontSize:12}}>{data.ethBlockHash}</strong>. Confirm it was mined around the timestamp above.</>
+                      : <><strong>Ethereum block hash</strong> — not used in Fast tier. Upgrade to Standard or Enterprise for Ethereum entropy source.</>
                   },
                   {
                     step:'3',
-                    text: <><strong style={{color:'#1A1A1A'}}>Check the seismic data</strong> — visit USGS Earthquake Hazards Program (earthquake.usgs.gov). Search for <strong style={{color:'#1A1A1A'}}>{data.seismicData}</strong> near the recorded date.</>
+                    text: data.seismicData
+                      ? <><strong>Check the seismic data</strong> — visit USGS Earthquake Hazards Program (earthquake.usgs.gov). Search for <strong>{data.seismicData}</strong> near the recorded date.</>
+                      : <><strong>Seismic data</strong> — not used in Fast tier. Upgrade to Standard or Enterprise for USGS seismic entropy source.</>
                   },
                   {
                     step:'4',
-                    text: <><strong style={{color:'#1A1A1A'}}>Conclude</strong> — if all three match public records at that timestamp, the entropy was real, unpredictable, and drawn from sources SRA Shield had no control over. The key generated from this entropy is cryptographically secure.</>
+                    text: <><strong>Conclude</strong> — if the Bitcoin price matches public records at that timestamp, the entropy was real and drawn from sources SRA Shield had no control over. The key is cryptographically secure.</>
                   },
                 ].map((item, i) => (
                   <div key={i} className="v-step">
