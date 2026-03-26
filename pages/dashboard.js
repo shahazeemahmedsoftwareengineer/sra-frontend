@@ -42,7 +42,7 @@ function UsageCard({ usage }) {
             <div style={{fontWeight:700,color:'#dc2626',fontSize:13}}>Plan limit reached — API calls blocked</div>
             <div style={{color:'#ef4444',fontSize:12,marginTop:2}}>Upgrade immediately to restore service.</div>
           </div>
-          <button style={{marginLeft:'auto',background:'#dc2626',color:'#fff',border:'none',borderRadius:8,padding:'7px 14px',fontSize:12,fontWeight:700,cursor:'pointer'}}>Upgrade Now →</button>
+          <button onClick={()=>document.dispatchEvent(new CustomEvent('sra-upgrade'))} style={{marginLeft:'auto',background:'#dc2626',color:'#fff',border:'none',borderRadius:8,padding:'7px 14px',fontSize:12,fontWeight:700,cursor:'pointer'}}>Upgrade Now →</button>
         </div>
       )}
       {usage.warningLevel === 'critical' && (
@@ -52,7 +52,7 @@ function UsageCard({ usage }) {
             <div style={{fontWeight:700,color:'#ea580c',fontSize:13}}>Only {usage.callsRemaining.toLocaleString()} calls remaining!</div>
             <div style={{color:'#f97316',fontSize:12,marginTop:2}}>Your app will stop working at 100%. Upgrade now.</div>
           </div>
-          <button style={{marginLeft:'auto',background:'#ea580c',color:'#fff',border:'none',borderRadius:8,padding:'7px 14px',fontSize:12,fontWeight:700,cursor:'pointer'}}>Upgrade Now →</button>
+          <button onClick={()=>document.dispatchEvent(new CustomEvent('sra-upgrade'))} style={{marginLeft:'auto',background:'#ea580c',color:'#fff',border:'none',borderRadius:8,padding:'7px 14px',fontSize:12,fontWeight:700,cursor:'pointer'}}>Upgrade Now →</button>
         </div>
       )}
       {usage.warningLevel === 'warning' && (
@@ -62,7 +62,7 @@ function UsageCard({ usage }) {
             <div style={{fontWeight:700,color:'#ca8a04',fontSize:13}}>80% of plan used</div>
             <div style={{color:'#eab308',fontSize:12,marginTop:2}}>Consider upgrading before you run out.</div>
           </div>
-          <button style={{marginLeft:'auto',background:'#ca8a04',color:'#fff',border:'none',borderRadius:8,padding:'7px 14px',fontSize:12,fontWeight:700,cursor:'pointer'}}>Upgrade Plan →</button>
+          <button onClick={()=>document.dispatchEvent(new CustomEvent('sra-upgrade'))} style={{marginLeft:'auto',background:'#ca8a04',color:'#fff',border:'none',borderRadius:8,padding:'7px 14px',fontSize:12,fontWeight:700,cursor:'pointer'}}>Upgrade Plan →</button>
         </div>
       )}
 
@@ -646,12 +646,28 @@ function UpgradePanel({ userPlan }) {
       `}</style>
 
       {/* Header */}
-      <div style={{textAlign:'center',marginBottom:32}}>
+      <div style={{textAlign:'center',marginBottom:24}}>
         <div style={{display:'inline-flex',alignItems:'center',gap:7,background:'#f0eeff',border:'1px solid #d6ceff',borderRadius:100,padding:'6px 16px',fontSize:12,fontWeight:700,color:'#6c5ce7',marginBottom:14}}>
           ⚡ Upgrade Your Plan
         </div>
         <div style={{fontSize:28,fontWeight:800,color:'#1a2035',letterSpacing:'-1px',marginBottom:8}}>Start free. Scale without surprises.</div>
         <p style={{fontSize:14,color:'#a0aec0',maxWidth:460,margin:'0 auto',lineHeight:1.6}}>No hidden fees. No per-request traps. Simple, flat monthly pricing. <strong style={{color:'#1a2035'}}>Don't trust us — verify us.</strong></p>
+      </div>
+
+      {/* Payment notice */}
+      <div style={{background:'#fff7ed',border:'1.5px solid #fed7aa',borderRadius:14,padding:'14px 20px',marginBottom:28,display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
+        <span style={{fontSize:22,flexShrink:0}}>💳</span>
+        <div style={{flex:1}}>
+          <div style={{fontSize:13,fontWeight:700,color:'#c2410c',marginBottom:3}}>Online checkout coming soon</div>
+          <div style={{fontSize:12.5,color:'#9a3412',lineHeight:1.6}}>
+            To upgrade right now, click <strong>"Upgrade to Business →"</strong> below — it opens a pre-filled email to our team.
+            We'll manually activate your plan within <strong>2 hours</strong> and send a payment link. Enterprise? Contact us directly.
+          </div>
+        </div>
+        <button onClick={()=>window.open('mailto:hello@srashield.com?subject=Upgrade%20to%20Business%20Plan&body=Hi%20SRA%20Shield%20team%2C%0A%0AI%20want%20to%20upgrade%20to%20Business%20plan%20(%2449%2Fmonth).%0A%0AAccount%20email%3A%20%5Byour%20registered%20email%5D%0A%0APlease%20send%20me%20the%20payment%20link.%0A%0AThank%20you.')}
+          style={{background:'#ea580c',color:'#fff',border:'none',borderRadius:10,padding:'10px 20px',fontSize:13,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
+          Email Us to Upgrade →
+        </button>
       </div>
 
       {/* Toggle */}
@@ -671,7 +687,7 @@ function UpgradePanel({ userPlan }) {
           <div className="up-pn">Starter</div>
           <div className="up-pr"><div className="up-pa">$0</div><div className="up-pper">/month</div></div>
           <p className="up-pd">For developers building and testing their integration.</p>
-          <button className="up-pb ol" onClick={()=>window.location.href='/register'}>Get started free</button>
+          <button className="up-pb ol" style={{cursor:'default',opacity:.7}} disabled>✓ Your Current Plan</button>
           <div className="up-pdiv"/>
           <div>
             {['1,000 API calls / month','1 encryption key','AES-256-GCM encryption','Full API access','Community support'].map(f=>(
@@ -689,7 +705,7 @@ function UpgradePanel({ userPlan }) {
           <div className="up-pn">Business</div>
           <div className="up-pr"><div className="up-pa">{annual?'$39':'$49'}</div><div className="up-pper">/month</div></div>
           <p className="up-pd">Everything a growing team needs to ship securely.</p>
-          <button className="up-pb wh" onClick={()=>alert('Stripe integration coming soon! Contact hello@srashield.com to upgrade.')}>Start Business plan</button>
+          <button className="up-pb wh" onClick={()=>window.open('mailto:hello@srashield.com?subject=Upgrade%20to%20Business%20Plan&body=Hi%20SRA%20Shield%20team%2C%0A%0AI%20would%20like%20to%20upgrade%20my%20account%20to%20the%20Business%20plan%20(%2449%2Fmonth).%0A%0AAccount%20email%3A%20%5Byour%20email%5D%0A%0APlease%20send%20me%20the%20payment%20link.%0A%0AThank%20you.')}>Upgrade to Business →</button>
           <div className="up-pdiv"/>
           <div>
             {['100,000 API calls / month','10 encryption keys','AES-256-GCM encryption','Usage analytics dashboard','Email support (24h SLA)','99.9% uptime SLA','Security compliance docs'].map(f=>(
@@ -804,6 +820,10 @@ export default function Dashboard() {
     fetchUsage();
     fetchActivity();
     fetchKeys();
+    // Allow UsageCard banners to trigger upgrade nav
+    const handler = () => setActiveNav('upgrade');
+    document.addEventListener('sra-upgrade', handler);
+    return () => document.removeEventListener('sra-upgrade', handler);
   }, []);
 
   const fetchKeys = async () => {
